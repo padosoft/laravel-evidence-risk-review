@@ -360,3 +360,19 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit` (`73 tests, 954 assertions`)
+- W6 macro PR #14 was merged into `main` as merge commit `f672767`.
+
+## 2026-06-14 (W7)
+
+- Started W7 DX, Docs, CI from `main` after W6 merge.
+- Created macro branch `macro/w7-dx-docs-ci` and subtask branch `task/w7-dx-docs-ci`.
+- W7 subtask objective: produce the high-quality README, add DX/community/security docs, `.env.example`, opt-in live tests, CODEOWNERS, and GitHub Actions CI matrix for PHP 8.3/8.4/8.5 with Laravel 13.
+- Implemented W7 code/docs: full README with badges and screenshot, `.env.example`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/CODEOWNERS`, `.github/workflows/ci.yml`, Live PHPUnit suite, and included the provided screenshot asset.
+- W7 local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `npx --yes yaml-lint .github/workflows/ci.yml`
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`74 tests, 954 assertions, 1 skipped live test`)
+  - `vendor/bin/phpunit --testsuite Live` (`1 skipped`)
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
