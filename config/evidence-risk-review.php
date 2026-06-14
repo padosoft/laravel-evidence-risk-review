@@ -21,6 +21,13 @@ return [
         'enabled' => env('EVIDENCE_RISK_REVIEW_LLM_ENABLED', false),
     ],
 
+    'budget' => [
+        'max_llm_calls' => env('EVIDENCE_RISK_REVIEW_MAX_LLM_CALLS', 3),
+        'max_tokens' => env('EVIDENCE_RISK_REVIEW_MAX_TOKENS', 6000),
+        'max_heavy_checks' => env('EVIDENCE_RISK_REVIEW_MAX_HEAVY_CHECKS', 8),
+        'max_wall_seconds' => env('EVIDENCE_RISK_REVIEW_MAX_WALL_SECONDS', 30),
+    ],
+
     'tiers' => [
         EvidenceTier::Guideline->value => ['rank' => 100, 'label' => 'Guideline'],
         EvidenceTier::PeerReviewed->value => ['rank' => 80, 'label' => 'Peer-reviewed'],
@@ -33,4 +40,12 @@ return [
     ],
 
     'tier_hints' => [],
+
+    'profiles' => [
+        'default' => require __DIR__.'/evidence-risk-review/profiles/default.php',
+        'engineering' => require __DIR__.'/evidence-risk-review/profiles/engineering.php',
+        'medical' => require __DIR__.'/evidence-risk-review/profiles/medical.php',
+        'legal' => require __DIR__.'/evidence-risk-review/profiles/legal.php',
+        'finance' => require __DIR__.'/evidence-risk-review/profiles/finance.php',
+    ],
 ];
