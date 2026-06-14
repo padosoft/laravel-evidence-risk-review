@@ -313,3 +313,9 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit --testdox` (`60 tests, 777 assertions`)
+- Subtask PR #9 was merged into `macro/w4-php-surface` as merge commit `d04a63f`.
+- W4 macro local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`60 tests, 777 assertions`)
