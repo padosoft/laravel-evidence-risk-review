@@ -18,6 +18,7 @@
     "require": {
         "php": "^8.3",
         "illuminate/contracts": "^13.0",
+        "illuminate/console": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0"
     },
@@ -41,7 +42,10 @@
         "laravel": {
             "providers": [
                 "Padosoft\\EvidenceRiskReview\\EvidenceRiskReviewServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "EvidenceRiskReview": "Padosoft\\EvidenceRiskReview\\Facades\\EvidenceRiskReview"
+            }
         }
     },
     "scripts": {
