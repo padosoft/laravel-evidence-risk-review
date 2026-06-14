@@ -6,6 +6,7 @@ namespace Padosoft\EvidenceRiskReview;
 
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use LogicException;
@@ -136,6 +137,12 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->apiEnabled()) {
+            Route::prefix($this->apiPrefix())
+                ->middleware($this->apiMiddleware())
+                ->group(__DIR__.'/../routes/api.php');
+        }
+
         $this->publishes([
             __DIR__.'/../config/evidence-risk-review.php' => config_path('evidence-risk-review.php'),
             __DIR__.'/../config/evidence-risk-review' => config_path('evidence-risk-review'),
@@ -153,5 +160,31 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
                 EvidenceLogCommand::class,
             ]);
         }
+    }
+
+    private function apiEnabled(): bool
+    {
+        return $this->app->make(ConfigRepository::class)->get('evidence-risk-review.api.enabled', false) === true;
+    }
+
+    private function apiPrefix(): string
+    {
+        $prefix = $this->app->make(ConfigRepository::class)->get('evidence-risk-review.api.prefix', 'evidence-risk-review/api');
+
+        return is_string($prefix) && $prefix !== '' ? trim($prefix, '/') : 'evidence-risk-review/api';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function apiMiddleware(): array
+    {
+        $middleware = $this->app->make(ConfigRepository::class)->get('evidence-risk-review.api.middleware', []);
+
+        if (! is_array($middleware) || ! array_is_list($middleware)) {
+            return [];
+        }
+
+        return array_values(array_filter($middleware, static fn (mixed $item): bool => is_string($item) && $item !== ''));
     }
 }
