@@ -57,6 +57,10 @@ CI note: before W7, the remote CI gate means no required checks are failing or p
 - Review log append-only.
 - Unknown/invalid states fail loudly.
 - UI tasks, if any, require Playwright interaction coverage.
+- Keep `phpunit.xml` aligned with new test directories, including `Feature` and opt-in `Live` suites.
+- Use `#[WithConfig(..., defer: false)]` for Testbench config that must exist before provider boot.
+- Run Redocly lint for OpenAPI changes and YAML lint for workflow changes.
+- After W7, remote GitHub Actions CI must pass before merge.
 
 ## Copilot Review Fallback
 

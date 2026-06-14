@@ -73,6 +73,11 @@ npm run e2e
 - Pure backend/package tasks require PHPUnit at minimum and architecture tests when dependencies or namespace boundaries are touched.
 - UI/UX tasks require Vitest/Vite when frontend code exists and Playwright scenarios for every meaningful interaction.
 - Live/provider tests must be opt-in and skipped by default when credentials are missing.
+- When adding a new test family, add it to `phpunit.xml`; do not accept a green PHPUnit run that skipped the new directory.
+- Testbench config that affects provider boot, route registration, or package discovery must be set before boot, for example with `#[WithConfig(..., defer: false)]`.
+- OpenAPI changes require Redocly lint. Explicit no-auth APIs should declare `security: []`, include `info.license`, and define at least one 4XX response per operation.
+- GitHub Actions workflow changes require a local YAML sanity check such as `npx --yes yaml-lint .github/workflows/ci.yml` when no stronger local action linter is available.
+- If Composer CLI times out even for `composer --version`, record it as a local tool blocker, verify `composer.json` parsing if relevant, and retry later.
 - If a tool is unavailable, record the exact blocker in `docs/PROGRESS.md`.
 
 ## Review Rules
