@@ -234,3 +234,29 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
 - While validating the macro branch after merge, `vendor/bin/pint --test` failed only on CRLF `line_ending` fixers introduced by Windows checkout/merge. Added `.gitattributes` to enforce LF for source/config/docs/test files and re-ran Pint normalization before opening the macro PR.
 - Opened macro PR #4 from `macro/w1-foundation` into `main`; Copilot remained invisible, so Codex fallback was triggered. Codex reviewed commit `8769c01573` and found one P2 issue: explicit `null` list fields were converted to empty arrays by `?? []`. Fixing with `array_key_exists()` defaults and explicit-null regression tests.
 - After fixing explicit null list fields, Codex reviewed commit `db5009bc84` and found one more P2 issue: built-in tier config overrides with `rank => null` or `label => null` inherited enum defaults instead of failing. Fixing with `array_key_exists()` defaults and regression tests.
+- Fixed the null tier override issue, reran local gates, pushed commit `6798338`, and re-triggered Codex fallback on PR #4. Codex responded: `Didn't find any major issues` with `Reviewed commit: 6798338fc4`. PR #4 was merged into `main` as merge commit `d96d650`.
+
+## 2026-06-14 (W2)
+
+- Started W2 Sweep Core from `main` after W1 merge.
+- Created macro branch `macro/w2-sweep-core` and subtask branch `task/w2-sweep-core`.
+- W2 subtask objective: implement `RiskCheck` contract, built-in cheap checks, `RiskSweepEngine`, verdict reduction, profile contract/config/registry, built-in profile config files, `ReviewBudget`, `BudgetMeter`, and budget skip findings.
+- W2 guardrails: `composer validate --strict`, `composer install --no-progress --prefer-dist` if dependencies change, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse --memory-limit=512M`, `vendor/bin/phpunit`, standalone architecture test. No UI is included in W2, so Vite and Playwright are not applicable.
+- Implemented W2 sweep core on `task/w2-sweep-core`: profile contract/registry/config profiles, budget value/meter, review finding/result/options DTOs, cheap built-in checks, risk sweep engine, provider bindings, and config publishing for nested profile files.
+- Added W2 tests covering budget caps, profile loading/validation, service-provider sweep engine resolution, all built-in cheap check kinds, verdict reduction, cheap-before-heavy ordering, over-budget heavy skip findings, and duplicate check registration rejection.
+- Local W2 gates passed:
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
+- `composer install` was not rerun because W2 did not change Composer dependencies. No UI is included in W2, so Vite and Playwright remain not applicable.
+- Local Copilot report-only review for `%TEMP%\laravel-evidence-risk-review-w2-sweep-core.diff` failed three consecutive times with `402 additional_spend_limit_reached`. Per user-approved local policy, W2 is exempt from the local Copilot gate and proceeds to PR review; retry local Copilot on the next subtask/macro.
+- Opened subtask PR #5 from `task/w2-sweep-core` into `macro/w2-sweep-core`. Copilot reviewer requests remained invisible, so Codex fallback was triggered with `@codex review`.
+- Codex reviewed commit `cb43ad3237` and found three P2 issues: env-driven budget values were strings rejected by `ReviewBudget`, missing profile `min_tier` entries silently downgraded assertiveness requirements to `unverified`, and malformed keyword settings silently disabled keyword checks. Fixed all three with regression tests.
+- After Codex fixes, local gates passed again:
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
+- Codex reviewed updated commit `4b84fe326a` and found two additional P2 issues: explicit `verdict => null` still defaulted through `??`, and keyword substring matching made `improves` match `proves`. Fixed both with regression tests.
+- Codex reviewed updated commit `377054113a` and found one additional P2 issue: unknown profile `checks` keys such as `red_flags` were accepted and later ignored. Fixed by validating settings keys against `RiskCheckKind` with a regression test.
+- Codex reviewed updated commit `ba01d0f916` and found two additional P2 issues: enabled keyword-backed checks could omit `keywords` and become no-ops, and vendor publishing copied package profiles into generic host `config/profiles`. Fixed by requiring keywords for enabled keyword-backed checks and publishing profiles under package-specific `config/evidence-risk-review/profiles`.
