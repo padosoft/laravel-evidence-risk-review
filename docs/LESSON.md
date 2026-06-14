@@ -58,3 +58,5 @@
 - Process change from 2026-06-14: per-W/per-subtask AI review loops can create too much latency. For the remainder of this roadmap, defer Copilot/Codex to one deep final review while keeping local gates, PRs, merges, and CI checks strict. Already received review findings should still be fixed.
 - In default-OFF Laravel packages, any path that can reach an injected host LLM must check the package `llm.enabled` flag before expensive or external work; relying on a Null implementation is not enough when hosts can rebind the contract.
 - When an LLM returns structured enrichment data such as `source_tiers`, either apply it with normal validation or do not spend the LLM call. Recording token use while discarding useful data is both confusing and wasteful.
+- When adding Laravel command or database behavior tests, verify `phpunit.xml` includes `tests/Feature`; otherwise new feature tests can sit on disk while PHPUnit still reports green.
+- On this Windows/Herd setup, `composer validate --strict` may appear stuck with default output. Retrying as `composer validate --strict --no-interaction --no-ansi` completed and should be preferred when the first form times out.
