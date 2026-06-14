@@ -384,3 +384,27 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpunit` (`74 tests, 954 assertions, 1 skipped live test`)
   - `npx --yes yaml-lint .github/workflows/ci.yml`
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+- W7 macro PR #16 CI passed on PHP 8.3, 8.4, and 8.5. PR #16 was merged into `main` as merge commit `d536f5b`.
+
+## 2026-06-14 (W8)
+
+- Started W8 Hardening And Release from `main` after W7 merge.
+- Created macro branch `macro/w8-hardening-release` and subtask branch `task/w8-hardening-release`.
+- W8 subtask objective: add required edge-case coverage, confirm PHPStan level 8 zero-baseline cleanliness, fold durable lessons into agent/rule/skill docs, perform the deferred deep AI review, and prepare final release.
+- Added hardening tests for empty claims, all-unverified sources, exhausted heavy/LLM budget, unknown custom tier, unknown profile, and append failure propagation.
+- Folded durable lessons from `docs/LESSON.md` into `AGENTS.md`, `CLAUDE.md`, `docs/RULES.md`, `skills/laravel-evidence-risk-review-plan/SKILL.md`, `.claude/skills/laravel-evidence-risk-review-plan/SKILL.md`, and `.claude/rules/laravel-evidence-risk-review.md`.
+- W8 local gates passed before final deep AI review:
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`80 tests, 966 assertions, 1 skipped live test`)
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+- Final deep local Copilot review over `%TEMP%\laravel-evidence-risk-review-final-deep.diff` failed with `402 additional_spend_limit_reached`. Use the documented Codex Connector fallback on the W8 PR for the final deep AI review.
+- Subtask PR #18 CI passed on PHP 8.3, 8.4, and 8.5. Codex Connector final deep review passed on commit `2e64e812b6` with "Didn't find any major issues." PR #18 was merged into `macro/w8-hardening-release` as merge commit `d24eade`.
+- W8 macro local gates passed:
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`80 tests, 966 assertions, 1 skipped live test`)
+  - `npx --yes yaml-lint .github/workflows/ci.yml`
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
