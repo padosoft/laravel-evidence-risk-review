@@ -334,3 +334,10 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit` (`67 tests, 900 assertions`)
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+- Subtask PR #11 was merged into `macro/w5-http-surface` as merge commit `13d1c21`.
+- W5 macro local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`67 tests, 900 assertions`)
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
