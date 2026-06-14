@@ -376,3 +376,11 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpunit` (`74 tests, 954 assertions, 1 skipped live test`)
   - `vendor/bin/phpunit --testsuite Live` (`1 skipped`)
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+- Subtask PR #15 CI passed on PHP 8.3, 8.4, and 8.5. PR #15 was merged into `macro/w7-dx-docs-ci` as merge commit `a57e9ae`.
+- W7 macro local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`74 tests, 954 assertions, 1 skipped live test`)
+  - `npx --yes yaml-lint .github/workflows/ci.yml`
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
