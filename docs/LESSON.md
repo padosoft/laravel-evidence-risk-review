@@ -63,3 +63,4 @@
 - For Testbench route-registration tests, config that controls provider boot must be set with `#[WithConfig(..., defer: false)]`; `defineEnvironment()` can be too late for package providers that register routes in `boot()`.
 - Redocly's default OpenAPI lint requires root or operation `security`, an `info.license`, and at least one 4XX response per operation. For default-off unauthenticated package APIs, `security: []` is the explicit no-auth declaration.
 - If Composer CLI stops responding even for `composer --version`, distinguish that from project validation failure. Record the exact failed commands, verify `composer.json` can be parsed, and retry Composer on the next subtask before treating it as code-related.
+- When Ruby is unavailable on Windows, `npx --yes yaml-lint .github/workflows/ci.yml` is a lightweight local sanity check for GitHub Actions workflow YAML.
