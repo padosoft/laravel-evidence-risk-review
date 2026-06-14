@@ -1,0 +1,57 @@
+{
+    "name": "padosoft/laravel-evidence-risk-review",
+    "description": "Standalone Laravel package for evidence-tier labeling and risk review guardrails.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "keywords": [
+        "laravel",
+        "evidence",
+        "risk-review",
+        "ai-safety",
+        "rag"
+    ],
+    "homepage": "https://github.com/padosoft/laravel-evidence-risk-review",
+    "support": {
+        "issues": "https://github.com/padosoft/laravel-evidence-risk-review/issues",
+        "source": "https://github.com/padosoft/laravel-evidence-risk-review"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^11.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Padosoft\\EvidenceRiskReview\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Padosoft\\EvidenceRiskReview\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Padosoft\\EvidenceRiskReview\\EvidenceRiskReviewServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "format": "pint",
+        "format:test": "pint --test"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -206,3 +206,31 @@ User approved continuing despite Copilot non-response and instructed that Copilo
 Triggered Codex fallback on PR #2 with `@codex review`. Codex responded on commit `3c47c8373d` with one P2 finding: `docs/RULES.md` still contained a contradictory ban on substituting Codex for Copilot. Updated the rule to allow Codex only for the documented fallback or explicit user request.
 
 Re-ran Codex fallback after that fix. Codex responded on commit `699c24bc54` with one P2 finding: `docs/RULES.md` declared MIT while the repo ships an Apache-2.0 `LICENSE`. Updated the rule to Apache-2.0 and recorded the lesson for W1 composer/README metadata.
+
+Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`; PR #2 was merged to `main` as merge commit `75b0e89`.
+
+## 2026-06-14
+
+- Started W1 Foundation on macro branch `macro/w1-foundation` and subtask branch `task/w1-foundation-scaffold`.
+- User confirmed the remote review fallback policy: Copilot remains the first review source; if Copilot is blocked by budget/quota or prolonged non-response, automatically switch to ChatGPT Codex Connector by commenting `@codex review` and verifying `chatgpt-codex-connector[bot]` responded on the current head commit.
+- Verified local toolchain for W1: Herd PHP `8.5.7` and Composer `2.9.7`.
+- W1 subtask objective: Composer/Testbench scaffold, package service provider/config, core enums, immutable DTOs, `EvidenceTierValue`, `TierResolver`, cheap-only `EvidenceTierLabeler`, and standalone architecture guardrail.
+- W1 subtask guardrails: `composer validate --strict`, dependency install/update, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse`, and `vendor/bin/phpunit`. No UI is included in W1, so Vite and Playwright are not applicable for this subtask.
+- Implemented W1 scaffold and core code: `composer.json`, `phpunit.xml`, `pint.json`, `phpstan.neon.dist`, default-off config, service provider, enums, immutable DTOs, `EvidenceTierValue`, `TierResolver`, and cheap-only `EvidenceTierLabeler`.
+- Added W1 tests: enum/rank/verdict ordering, DTO array round-trip, tier value validation, resolver custom tier/rerank/order behavior, labeler declared tier/hints/DOI/arXiv/unverified behavior, and standalone architecture scan over `src/` plus Composer dependency keys.
+- Local gates passed after formatting:
+  - `composer validate --strict`
+  - `composer install --no-progress --prefer-dist`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M`
+  - `vendor/bin/phpunit`
+- Plain `vendor/bin/phpstan analyse` exhausted Herd PHP's 128M memory limit before reporting type errors; the local W1 gate uses `--memory-limit=512M` and this lesson is recorded in `docs/LESSON.md`.
+- Local Copilot report-only review attempts for W1 Foundation failed three consecutive times with `402 additional_spend_limit_reached` while reviewing `%TEMP%\laravel-evidence-risk-review-w1-foundation.diff`. Per user-approved local policy, this subtask is exempt from the local Copilot gate and will proceed to PR review; retry local Copilot on the next subtask/macro.
+- Opened subtask PR #3 from `task/w1-foundation-scaffold` into `macro/w1-foundation`. Copilot reviewer requests and repository ruleset did not produce visible Copilot review/comment/request surfaces, so Codex fallback was triggered with `@codex review`.
+- Codex fallback reviewed commit `4784d7d866` and found two P2 issues in `EvidenceTierLabeler`: invalid matching tier hints silently fell back to `unverified`, and DOI detection over-ranked arXiv sources before the preprint branch. Both fixes are being applied with dedicated tests.
+- Fixed both Codex findings, reran local gates, amended/pushed PR #3 at commit `7caa68a`, and re-triggered Codex fallback. Codex responded: `Didn't find any major issues` with `Reviewed commit: 7caa68ab91`. The subtask PR is ready to merge into `macro/w1-foundation`; no CI checks exist yet before W7.
+- After updating `docs/PROGRESS.md`, PR #3 was amended to commit `b693b5d` and Codex was re-triggered. Codex found one additional P2 issue: DTO `list<>` fields accepted associative arrays and silently normalized them. Fixing `source_ids`, `claims`, and `sources` with `array_is_list()` guards plus regression tests.
+- Fixed the DTO list-shape issue, reran local gates, amended/pushed PR #3 at commit `d45b107`, and re-triggered Codex fallback. Codex responded: `Didn't find any major issues` with `Reviewed commit: d45b1079f3`. PR #3 was merged into `macro/w1-foundation` as merge commit `7a576f5`.
+- While validating the macro branch after merge, `vendor/bin/pint --test` failed only on CRLF `line_ending` fixers introduced by Windows checkout/merge. Added `.gitattributes` to enforce LF for source/config/docs/test files and re-ran Pint normalization before opening the macro PR.
+- Opened macro PR #4 from `macro/w1-foundation` into `main`; Copilot remained invisible, so Codex fallback was triggered. Codex reviewed commit `8769c01573` and found one P2 issue: explicit `null` list fields were converted to empty arrays by `?? []`. Fixing with `array_key_exists()` defaults and explicit-null regression tests.
+- After fixing explicit null list fields, Codex reviewed commit `db5009bc84` and found one more P2 issue: built-in tier config overrides with `rank => null` or `label => null` inherited enum defaults instead of failing. Fixing with `array_key_exists()` defaults and regression tests.
