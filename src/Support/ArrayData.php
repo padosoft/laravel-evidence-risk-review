@@ -46,7 +46,7 @@ final class ArrayData
      */
     public static function map(array $payload, string $key): array
     {
-        $value = $payload[$key] ?? [];
+        $value = array_key_exists($key, $payload) ? $payload[$key] : [];
 
         if (! is_array($value)) {
             throw new InvalidArgumentException("Expected object map at [{$key}].");
@@ -61,7 +61,7 @@ final class ArrayData
      */
     public static function stringList(array $payload, string $key): array
     {
-        $value = $payload[$key] ?? [];
+        $value = array_key_exists($key, $payload) ? $payload[$key] : [];
 
         if (! is_array($value)) {
             throw new InvalidArgumentException("Expected list of strings at [{$key}].");

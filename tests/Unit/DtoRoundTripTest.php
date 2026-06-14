@@ -58,6 +58,18 @@ final class DtoRoundTripTest extends TestCase
     }
 
     #[Test]
+    public function explicit_null_source_ids_are_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        ClaimRef::fromArray([
+            'id' => 'claim-1',
+            'text' => 'A claim.',
+            'source_ids' => null,
+        ]);
+    }
+
+    #[Test]
     public function review_artifact_claims_must_be_a_json_list(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -75,6 +87,18 @@ final class DtoRoundTripTest extends TestCase
     }
 
     #[Test]
+    public function explicit_null_claims_are_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        ReviewArtifact::fromArray([
+            'artifact_id' => 'artifact-1',
+            'answer_text' => 'A careful answer.',
+            'claims' => null,
+        ]);
+    }
+
+    #[Test]
     public function review_artifact_sources_must_be_a_json_list(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -87,6 +111,18 @@ final class DtoRoundTripTest extends TestCase
                     'id' => 'source-1',
                 ],
             ],
+        ]);
+    }
+
+    #[Test]
+    public function explicit_null_sources_are_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        ReviewArtifact::fromArray([
+            'artifact_id' => 'artifact-1',
+            'answer_text' => 'A careful answer.',
+            'sources' => null,
         ]);
     }
 }

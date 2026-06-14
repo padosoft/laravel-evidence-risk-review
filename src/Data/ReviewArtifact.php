@@ -32,8 +32,8 @@ final readonly class ReviewArtifact
         return new self(
             artifactId: ArrayData::string($payload, 'artifact_id'),
             answerText: ArrayData::string($payload, 'answer_text'),
-            claims: self::claimList($payload['claims'] ?? []),
-            sources: self::sourceList($payload['sources'] ?? []),
+            claims: self::claimList(array_key_exists('claims', $payload) ? $payload['claims'] : []),
+            sources: self::sourceList(array_key_exists('sources', $payload) ? $payload['sources'] : []),
             question: ArrayData::nullableString($payload, 'question'),
             tenantId: ArrayData::nullableString($payload, 'tenant_id'),
             metadata: ArrayData::map($payload, 'metadata'),
