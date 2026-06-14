@@ -16,6 +16,10 @@ use Padosoft\EvidenceRiskReview\Checks\LlmEvidenceStrengthCheck;
 use Padosoft\EvidenceRiskReview\Checks\OverGeneralizationCheck;
 use Padosoft\EvidenceRiskReview\Checks\RedFlagCheck;
 use Padosoft\EvidenceRiskReview\Checks\SpecialPopulationCheck;
+use Padosoft\EvidenceRiskReview\Console\EvidenceLogCommand;
+use Padosoft\EvidenceRiskReview\Console\EvidenceProfilesCommand;
+use Padosoft\EvidenceRiskReview\Console\EvidenceReviewCommand;
+use Padosoft\EvidenceRiskReview\Console\EvidenceTaxonomyCommand;
 use Padosoft\EvidenceRiskReview\Contracts\EvidenceReviewerLlmContract;
 use Padosoft\EvidenceRiskReview\Contracts\ReviewLogStore;
 use Padosoft\EvidenceRiskReview\Contracts\RiskCheck;
@@ -117,6 +121,17 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
                 $app->make(ConfigRepository::class),
             );
         });
+
+        $this->app->singleton(EvidenceRiskReview::class, static function ($app): EvidenceRiskReview {
+            return new EvidenceRiskReview(
+                $app->make(ReviewEngine::class),
+                $app->make(EvidenceTierLabeler::class),
+                $app->make(DomainProfileRegistry::class),
+                $app->make(TierResolver::class),
+            );
+        });
+
+        $this->app->alias(EvidenceRiskReview::class, 'evidence-risk-review');
     }
 
     public function boot(): void
@@ -129,5 +144,14 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../database/migrations/create_evidence_risk_review_logs_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_evidence_risk_review_logs_table.php'),
         ], 'evidence-risk-review-migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                EvidenceReviewCommand::class,
+                EvidenceProfilesCommand::class,
+                EvidenceTaxonomyCommand::class,
+                EvidenceLogCommand::class,
+            ]);
+        }
     }
 }

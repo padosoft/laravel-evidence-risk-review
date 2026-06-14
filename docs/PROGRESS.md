@@ -298,3 +298,18 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit`
+- W3 macro PR #8 was merged into `main` as merge commit `72fe118`.
+
+## 2026-06-14 (W4)
+
+- Started W4 PHP Surface from `main` after W3 merge.
+- Created macro branch `macro/w4-php-surface` and subtask branch `task/w4-php-surface`.
+- W4 subtask objective: add the public PHP service/facade surface, array review helper, profile/taxonomy helpers, Artisan commands, command exit codes, and command/public API tests.
+- Implemented W4 code: `EvidenceRiskReview` service, Laravel facade, facade alias metadata, `ReviewOptions::fromArray()`, console command registration, `evidence:review`, `evidence:profiles`, `evidence:taxonomy`, and `evidence:log`.
+- Updated `phpunit.xml` to include `tests/Feature`, because feature tests existed but were not part of the default PHPUnit suite.
+- W4 local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer update illuminate/console --with-all-dependencies --no-progress`
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit --testdox` (`60 tests, 777 assertions`)
