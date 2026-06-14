@@ -24,6 +24,9 @@ This file mirrors the durable rules for Claude Code and other Claude-compatible 
 - Every completed task needs precise tests. UI/UX tasks also need Playwright interaction scenarios.
 - Keep `docs/PROGRESS.md` and `docs/LESSON.md` current.
 - Follow the branch/PR/Copilot/CI loop in `AGENTS.md`.
+- Keep PHPUnit suite coverage honest: add new test directories to `phpunit.xml`, use `#[WithConfig(..., defer: false)]` for Testbench provider-boot config, and verify live suites skip without env.
+- Redocly OpenAPI lint and workflow YAML lint are part of DX/API guardrails once those files exist.
+- If Composer CLI itself times out, record the exact command failures and retry later; do not confuse a tool hang with invalid package metadata.
 
 ## Review Checklist
 

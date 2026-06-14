@@ -40,6 +40,11 @@ If context is missing, read that spec first, then read:
 - Log review failures loudly; never silently swallow persistence, profile, budget, or LLM errors.
 - Update `docs/PROGRESS.md` after meaningful work.
 - Update `docs/LESSON.md` when discovering setup facts, API decisions, review feedback, or test workarounds that would save the next session time.
+- Ensure `phpunit.xml` includes every test family introduced by the work (`Unit`, `Feature`, `Live`, `Architecture`); a green run that omits new directories is not a valid gate.
+- For Testbench config that controls provider boot or route registration, prefer `#[WithConfig(..., defer: false)]` over late environment mutation.
+- OpenAPI changes must pass Redocly lint. Declare `security: []` for explicit no-auth APIs, include `info.license`, and include 4XX responses for operations.
+- If Composer appears stuck, retry with `--no-interaction --no-ansi`. If even `composer --version` times out, record the blocker separately from code validation and retry on the next subtask.
+- After W7, remote CI is mandatory for every PR and must pass before merge.
 
 ## Branch And PR Loop
 
