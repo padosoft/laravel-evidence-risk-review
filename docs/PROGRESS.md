@@ -319,3 +319,18 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit` (`60 tests, 777 assertions`)
+- W4 macro PR #10 was merged into `main` as merge commit `f9b3a7b`.
+
+## 2026-06-14 (W5)
+
+- Started W5 HTTP Surface from `main` after W4 merge.
+- Created macro branch `macro/w5-http-surface` and subtask branch `task/w5-http-surface`.
+- W5 subtask objective: add configurable default-OFF HTTP routes, REST controllers, request payload parsing, stable error contract, persisted review lookup, OpenAPI 3.1 YAML, and HTTP feature tests.
+- Implemented W5 code: package route file, default-OFF route registration, review/profile/taxonomy/OpenAPI controllers, `ReviewPayloadRequest`, `ErrorResponse`, `ReviewLogQuery`, OpenAPI document, and README HTTP examples.
+- W5 local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer update illuminate/http illuminate/routing --with-all-dependencies --no-progress`
+  - `composer validate --strict --no-interaction --no-ansi`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit` (`67 tests, 900 assertions`)
+  - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`

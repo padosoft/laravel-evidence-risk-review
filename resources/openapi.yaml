@@ -1,0 +1,300 @@
+openapi: 3.1.0
+info:
+  title: Laravel Evidence Risk Review API
+  version: 0.5.0
+  summary: Default-off HTTP API for evidence-tier labeling and risk review.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+security: []
+servers:
+  - url: /evidence-risk-review/api
+paths:
+  /reviews:
+    post:
+      operationId: createEvidenceRiskReview
+      summary: Review an evidence artifact.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ReviewArtifact'
+                - $ref: '#/components/schemas/ReviewEnvelope'
+      responses:
+        '201':
+          description: Review result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResult'
+        '404':
+          $ref: '#/components/responses/UnknownProfile'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/LlmUnavailable'
+  /reviews/{review}:
+    get:
+      operationId: getEvidenceRiskReview
+      summary: Fetch a persisted review result.
+      parameters:
+        - name: review
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Review result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResult'
+        '404':
+          $ref: '#/components/responses/UnknownReview'
+  /profiles:
+    get:
+      operationId: listEvidenceRiskProfiles
+      summary: List configured risk profiles.
+      responses:
+        '200':
+          description: Profile map.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profiles]
+                properties:
+                  profiles:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /profiles/{key}:
+    get:
+      operationId: getEvidenceRiskProfile
+      summary: Fetch one risk profile.
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profile]
+                properties:
+                  profile:
+                    $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/UnknownProfile'
+  /taxonomy:
+    get:
+      operationId: getEvidenceRiskTaxonomy
+      summary: Return tiers, risk checks, verdicts, and assertiveness values.
+      responses:
+        '200':
+          description: Taxonomy.
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /openapi.yaml:
+    get:
+      operationId: getEvidenceRiskOpenApi
+      summary: Return this OpenAPI document.
+      responses:
+        '200':
+          description: OpenAPI 3.1 YAML.
+          content:
+            application/yaml:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  responses:
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnknownProfile:
+      description: Unknown risk profile.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnknownReview:
+      description: Unknown review id.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Invalid request payload.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    LlmUnavailable:
+      description: LLM boundary is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+    ReviewEnvelope:
+      type: object
+      required: [artifact]
+      properties:
+        artifact:
+          $ref: '#/components/schemas/ReviewArtifact'
+        options:
+          $ref: '#/components/schemas/ReviewOptions'
+    ReviewArtifact:
+      type: object
+      required: [artifact_id, answer_text]
+      properties:
+        artifact_id:
+          type: string
+        answer_text:
+          type: string
+        question:
+          type: [string, 'null']
+        tenant_id:
+          type: [string, 'null']
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimRef'
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceRef'
+        metadata:
+          type: object
+    ClaimRef:
+      type: object
+      required: [id, text]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        assertiveness:
+          type: string
+          enum: [definitive, likely, tentative]
+        source_ids:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+    SourceRef:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        url:
+          type: [string, 'null']
+        title:
+          type: [string, 'null']
+        snippet:
+          type: [string, 'null']
+        declared_tier:
+          type: [string, 'null']
+        metadata:
+          type: object
+    ReviewOptions:
+      type: object
+      properties:
+        profile_key:
+          type: string
+        budget:
+          type: [object, 'null']
+        label_via_llm:
+          type: boolean
+        dry_run:
+          type: boolean
+    ReviewResult:
+      type: object
+      required:
+        - review_id
+        - artifact_id
+        - profile_key
+        - findings
+        - claim_verdicts
+        - source_tiers
+        - risk_score
+        - budget
+        - reviewed_at
+        - metadata
+      properties:
+        review_id:
+          type: string
+        artifact_id:
+          type: string
+        profile_key:
+          type: string
+        findings:
+          type: array
+          items:
+            type: object
+        claim_verdicts:
+          type: object
+          additionalProperties:
+            type: string
+        source_tiers:
+          type: object
+          additionalProperties:
+            type: object
+        risk_score:
+          type: number
+        budget:
+          type: object
+        reviewed_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+    Profile:
+      type: object
+      required: [key, label, description, enabled_checks]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        enabled_checks:
+          type: array
+          items:
+            type: string
