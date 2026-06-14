@@ -42,3 +42,4 @@
 - W1 Foundation has no UI surface. Vite and Playwright gates are not applicable until a milestone introduces UI/UX; still record that explicitly in `docs/PROGRESS.md` for each non-UI subtask.
 - Codex PR review caught two W1 labeler guardrails: matching `tier_hints` entries must fail loudly when they reference an undefined tier, and host-specific preprint classification such as `arxiv.org` must win before generic DOI detection to avoid over-ranking preprints as peer-reviewed.
 - Codex PR review caught a DTO shape issue: `list<>` fields must reject associative arrays with `array_is_list()` instead of normalizing values and silently changing invalid JSON-object input into a list.
+- On this Windows checkout, merging a PR can re-materialize PHP/config/test files with CRLF and make `vendor/bin/pint --test` fail on `line_ending`. Keep `.gitattributes` in the repo with LF rules for PHP, JSON, XML, NEON, YAML, and Markdown before opening macro PRs.
