@@ -5,17 +5,27 @@ declare(strict_types=1);
 namespace Padosoft\EvidenceRiskReview;
 
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 use LogicException;
 use Padosoft\EvidenceRiskReview\Checks\BoundaryConditionCheck;
 use Padosoft\EvidenceRiskReview\Checks\ContraindicationCheck;
 use Padosoft\EvidenceRiskReview\Checks\EvidenceStrengthCheck;
+use Padosoft\EvidenceRiskReview\Checks\LlmEvidenceStrengthCheck;
 use Padosoft\EvidenceRiskReview\Checks\OverGeneralizationCheck;
 use Padosoft\EvidenceRiskReview\Checks\RedFlagCheck;
 use Padosoft\EvidenceRiskReview\Checks\SpecialPopulationCheck;
+use Padosoft\EvidenceRiskReview\Contracts\EvidenceReviewerLlmContract;
+use Padosoft\EvidenceRiskReview\Contracts\ReviewLogStore;
 use Padosoft\EvidenceRiskReview\Contracts\RiskCheck;
+use Padosoft\EvidenceRiskReview\Llm\NullEvidenceReviewerLlm;
+use Padosoft\EvidenceRiskReview\Log\ArrayReviewLogStore;
+use Padosoft\EvidenceRiskReview\Log\DatabaseReviewLogStore;
+use Padosoft\EvidenceRiskReview\Log\NullReviewLogStore;
 use Padosoft\EvidenceRiskReview\Profiles\DomainProfileRegistry;
 use Padosoft\EvidenceRiskReview\Support\EvidenceTierLabeler;
+use Padosoft\EvidenceRiskReview\Support\ReviewEngine;
 use Padosoft\EvidenceRiskReview\Support\RiskSweepEngine;
 use Padosoft\EvidenceRiskReview\Support\TierResolver;
 
@@ -31,6 +41,7 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
         ContraindicationCheck::class,
         BoundaryConditionCheck::class,
         RedFlagCheck::class,
+        LlmEvidenceStrengthCheck::class,
     ];
 
     public function register(): void
@@ -52,6 +63,33 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
             return new DomainProfileRegistry($app->make(ConfigRepository::class));
         });
 
+        $this->app->singleton(EvidenceReviewerLlmContract::class, static fn (): EvidenceReviewerLlmContract => new NullEvidenceReviewerLlm);
+
+        $this->app->singleton(ReviewLogStore::class, static function ($app): ReviewLogStore {
+            $config = $app->make(ConfigRepository::class);
+            $store = $config->get('evidence-risk-review.review_log.store', 'null');
+
+            if ($store === 'array') {
+                return new ArrayReviewLogStore;
+            }
+
+            if ($store === 'database') {
+                $connection = $config->get('evidence-risk-review.review_log.connection');
+                $table = $config->get('evidence-risk-review.review_log.table', 'evidence_risk_review_logs');
+
+                return new DatabaseReviewLogStore(
+                    $app->make(DatabaseManager::class)->connection(is_string($connection) ? $connection : null),
+                    is_string($table) ? $table : 'evidence_risk_review_logs',
+                );
+            }
+
+            if ($store === 'null') {
+                return new NullReviewLogStore;
+            }
+
+            throw new InvalidArgumentException('Unknown evidence risk review log store ['.(is_scalar($store) ? (string) $store : get_debug_type($store)).'].');
+        });
+
         $this->app->singleton(RiskSweepEngine::class, function ($app): RiskSweepEngine {
             $checks = [];
 
@@ -67,6 +105,18 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
 
             return new RiskSweepEngine($checks);
         });
+
+        $this->app->singleton(ReviewEngine::class, static function ($app): ReviewEngine {
+            return new ReviewEngine(
+                $app->make(DomainProfileRegistry::class),
+                $app->make(RiskSweepEngine::class),
+                $app->make(EvidenceTierLabeler::class),
+                $app->make(TierResolver::class),
+                $app->make(EvidenceReviewerLlmContract::class),
+                $app->make(ReviewLogStore::class),
+                $app->make(ConfigRepository::class),
+            );
+        });
     }
 
     public function boot(): void
@@ -75,5 +125,9 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
             __DIR__.'/../config/evidence-risk-review.php' => config_path('evidence-risk-review.php'),
             __DIR__.'/../config/evidence-risk-review' => config_path('evidence-risk-review'),
         ], 'evidence-risk-review-config');
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/create_evidence_risk_review_logs_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_evidence_risk_review_logs_table.php'),
+        ], 'evidence-risk-review-migrations');
     }
 }

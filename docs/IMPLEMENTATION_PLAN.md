@@ -35,6 +35,8 @@ The package exposes one core through three thin surfaces:
 
 User rule: one macro branch per macro task; each subtask gets a PR into the macro branch. When the macro is complete, open the macro PR into `main`.
 
+Temporary review strategy override from 2026-06-14: while completing W3-W8, do not launch local Copilot, GitHub Copilot, or Codex reviews for every W/subtask. Keep local gates, PRs, merges, and CI checks. Run one deep AI review over the completed roadmap before final hardening/release. If an AI review was already running before this override, fix valid findings already received but do not request another pass.
+
 Macro branches:
 
 | Macro | Branch | Scope |

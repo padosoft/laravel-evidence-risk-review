@@ -15,6 +15,7 @@ This file mirrors the durable rules for Claude Code and other Claude-compatible 
 
 ## Non-Negotiables
 
+- Temporary review strategy override from 2026-06-14: do not launch local Copilot, GitHub Copilot, or Codex reviews for each W/subtask while completing W3-W8. Run local gates and PR/CI flow, then perform one deep AI review before final hardening/release. Fix valid findings already received from an in-flight review, but do not request another pass.
 - This package is standalone. Do not import or reference AskMyDocs, `KnowledgeDocument`, `KbSearchService`, AskMyDocs tables, or sibling package symbols.
 - Laravel 13.x, PHP `^8.3`, CI across PHP 8.3/8.4/8.5, local Herd PHP 8.5 preferred when available.
 - HTTP API, MCP, and LLM are default-OFF.

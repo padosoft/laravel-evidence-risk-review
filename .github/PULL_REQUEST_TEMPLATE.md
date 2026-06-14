@@ -22,12 +22,12 @@ Plan reference:
 - [ ] PHPUnit package tests
 - [ ] Vite/Vitest/build gates, if frontend code exists
 - [ ] Playwright scenarios, if UI/UX behavior changed
-- [ ] GitHub Copilot Code Review requested or re-requested; actionable comments addressed
+- [ ] GitHub Copilot/Codex review completed, or deferred by the temporary W3-W8 final-deep-review override
 
 ## Copilot Review
 
 - [ ] Review requested with `--reviewer copilot` or documented fallback
-- [ ] Verified Copilot actually started through requested reviewers, review requests, reviews, or comments
+- [ ] Verified Copilot actually started through requested reviewers, review requests, reviews, or comments, or recorded final-deep-review deferral
 - [ ] Read review summaries, top-level comments, inline comments, and review threads
 - [ ] Re-requested review after fix pushes, or documented automatic review-on-push behavior
 

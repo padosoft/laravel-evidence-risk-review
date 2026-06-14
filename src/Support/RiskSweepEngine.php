@@ -33,9 +33,41 @@ final class RiskSweepEngine
      */
     public function sweep(ReviewArtifact $artifact, RiskProfileContract $profile, BudgetMeter $meter): array
     {
+        return $this->sweepCost($artifact, $profile, $meter, null);
+    }
+
+    /**
+     * @return list<ReviewFinding>
+     */
+    public function sweepCheap(ReviewArtifact $artifact, RiskProfileContract $profile, BudgetMeter $meter): array
+    {
+        return $this->sweepCost($artifact, $profile, $meter, RiskCostClass::Cheap);
+    }
+
+    /**
+     * @return list<ReviewFinding>
+     */
+    public function sweepHeavy(ReviewArtifact $artifact, RiskProfileContract $profile, BudgetMeter $meter): array
+    {
+        return $this->sweepCost($artifact, $profile, $meter, RiskCostClass::Heavy);
+    }
+
+    /**
+     * @return list<ReviewFinding>
+     */
+    private function sweepCost(
+        ReviewArtifact $artifact,
+        RiskProfileContract $profile,
+        BudgetMeter $meter,
+        ?RiskCostClass $onlyCost,
+    ): array {
         $findings = [];
 
         foreach ($this->supportedChecks($profile) as $check) {
+            if ($onlyCost !== null && $check->costClass() !== $onlyCost) {
+                continue;
+            }
+
             if ($check->costClass() === RiskCostClass::Heavy && ! $meter->tryConsumeLlmCall()) {
                 $findings[] = $this->skippedOverBudgetFinding($check);
 

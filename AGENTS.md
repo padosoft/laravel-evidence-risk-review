@@ -29,6 +29,7 @@ If context is missing, read that spec first, then read:
 
 ## Operating Rules
 
+- Temporary review strategy override from 2026-06-14: do not launch local Copilot, GitHub Copilot, or Codex reviews for every W/subtask while completing W3-W8. Keep running local gates, PRs, merges, and CI checks. Collect review notes in `docs/PROGRESS.md`/`docs/LESSON.md`, then run one deep Copilot/Codex review over the full roadmap diff before final hardening/release. If an AI review was already running before this override, fix any valid findings already received, but do not request another pass.
 - Treat this as a reusable Laravel package, not an AskMyDocs feature branch.
 - The package must stay 100% standalone-agnostic: no dependency, namespace, schema, or symbol leak from AskMyDocs or sibling products.
 - Target Laravel 13.x and PHP `^8.3`; local validation should include Herd PHP 8.5 when available, with CI matrix for PHP 8.3, 8.4, and 8.5.
@@ -61,7 +62,7 @@ For every subtask:
 2. Implement the smallest coherent slice.
 3. Add or update focused PHPUnit tests. Add Vite/Vitest and Playwright only when UI/UX or browser behavior exists.
 4. Run all relevant local gates.
-5. Run local Copilot review in report-only mode:
+5. While the temporary review strategy override is active, skip per-task local Copilot review and record that the deep review is deferred to the final roadmap pass. When the override is removed, run local Copilot review in report-only mode:
 
    ```powershell
    git diff --no-ext-diff origin/main...HEAD > "$env:TEMP\laravel-evidence-risk-review.diff"
@@ -74,15 +75,13 @@ For every subtask:
 
    After every local Copilot review, run `git status` and inspect any diff before staging. Copilot CLI can still attempt filesystem edits despite report-only instructions; keep only intentional changes.
 
-6. Loop until local tests are green and local Copilot has zero actionable comments.
+6. Loop until local tests are green.
 7. Push and open a PR into the macro branch.
-8. Request GitHub Copilot Code Review and verify that the review actually started.
-9. Wait at least 60 seconds for CI to start and up to 15 minutes for Copilot to respond unless GitHub reports a clear blocker.
-10. Read Copilot review summaries, top-level PR comments, inline review comments, and unresolved review threads.
-11. Fix failing checks or Copilot comments, update `docs/LESSON.md` when something useful is learned, push, request/re-request Copilot review, and repeat until green.
-12. Merge only when CI is green and Copilot comments are resolved.
+8. While the temporary review strategy override is active, do not request per-PR Copilot/Codex review. Wait for CI only when CI exists; before W7, verify no required checks are failing or pending.
+9. Fix failing checks, update `docs/LESSON.md` when something useful is learned, push, and repeat until green.
+10. Merge when local gates are green and remote CI has no failing or pending required checks.
 
-Do not fake unavailable remote steps. If GitHub/Copilot/CI access is blocked, record the exact blocker and the next required remote action in `docs/PROGRESS.md`.
+Do not fake unavailable remote steps. If GitHub/CI access is blocked, record the exact blocker and the next required remote action in `docs/PROGRESS.md`.
 
 CI note: the GitHub Actions workflow is introduced in W7. For Bootstrap and W1-W6, the remote CI gate means no required checks are failing or pending. After W7, every PR must wait for the configured workflow to pass.
 
@@ -184,4 +183,4 @@ The REST `requested_reviewers` endpoint can return success without creating a vi
 
 ## Current Priority
 
-Start `macro/w1-foundation` and its first subtask branch.
+Continue W3 on `task/w3-llm-engine-log`; finish PR #7 into `macro/w3-llm-engine-log` without launching another per-PR review, then proceed through W4-W8 with the temporary final-deep-review strategy.

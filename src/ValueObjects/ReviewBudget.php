@@ -40,6 +40,19 @@ final readonly class ReviewBudget
     }
 
     /**
+     * @return array{max_llm_calls: int, max_tokens: int, max_heavy_checks: int, max_wall_seconds: int}
+     */
+    public function toArray(): array
+    {
+        return [
+            'max_llm_calls' => $this->maxLlmCalls,
+            'max_tokens' => $this->maxTokens,
+            'max_heavy_checks' => $this->maxHeavyChecks,
+            'max_wall_seconds' => $this->maxWallSeconds,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     private static function integer(array $payload, string $key, int $default): int
