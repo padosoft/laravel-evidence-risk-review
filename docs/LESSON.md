@@ -44,3 +44,4 @@
 - Codex PR review caught a DTO shape issue: `list<>` fields must reject associative arrays with `array_is_list()` instead of normalizing values and silently changing invalid JSON-object input into a list.
 - On this Windows checkout, merging a PR can re-materialize PHP/config/test files with CRLF and make `vendor/bin/pint --test` fail on `line_ending`. Keep `.gitattributes` in the repo with LF rules for PHP, JSON, XML, NEON, YAML, and Markdown before opening macro PRs.
 - Codex macro PR review caught another DTO shape guardrail: use `array_key_exists()` when applying defaults so missing list/map keys can default to empty arrays while explicit `null` fails validation instead of being silently converted to empty data.
+- The same `array_key_exists()` rule applies to config overlays: built-in tier config may inherit enum defaults only when `rank`/`label` keys are missing, while explicit `null` must fail validation.

@@ -107,8 +107,8 @@ final class TierResolver
      */
     private function fromConfig(string $key, array $definition, ?EvidenceTier $builtIn): EvidenceTierValue
     {
-        $rank = $definition['rank'] ?? $builtIn?->rank();
-        $label = $definition['label'] ?? $builtIn?->label();
+        $rank = array_key_exists('rank', $definition) ? $definition['rank'] : $builtIn?->rank();
+        $label = array_key_exists('label', $definition) ? $definition['label'] : $builtIn?->label();
 
         if (! is_int($rank)) {
             throw new InvalidArgumentException("Tier [{$key}] must define an integer rank.");

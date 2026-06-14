@@ -55,4 +55,30 @@ final class TierResolverTest extends TestCase
 
         $this->resolve(TierResolver::class)->resolveConfigured('missing_tier');
     }
+
+    #[Test]
+    public function null_rank_override_fails_loudly(): void
+    {
+        config()->set('evidence-risk-review.tiers.official', [
+            'rank' => null,
+            'label' => 'Regulator',
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->resolve(TierResolver::class)->resolve('official');
+    }
+
+    #[Test]
+    public function null_label_override_fails_loudly(): void
+    {
+        config()->set('evidence-risk-review.tiers.official', [
+            'rank' => 88,
+            'label' => null,
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->resolve(TierResolver::class)->resolve('official');
+    }
 }
