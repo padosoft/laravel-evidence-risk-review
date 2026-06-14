@@ -28,6 +28,7 @@ use Padosoft\EvidenceRiskReview\Llm\NullEvidenceReviewerLlm;
 use Padosoft\EvidenceRiskReview\Log\ArrayReviewLogStore;
 use Padosoft\EvidenceRiskReview\Log\DatabaseReviewLogStore;
 use Padosoft\EvidenceRiskReview\Log\NullReviewLogStore;
+use Padosoft\EvidenceRiskReview\Mcp\McpToolRegistry;
 use Padosoft\EvidenceRiskReview\Profiles\DomainProfileRegistry;
 use Padosoft\EvidenceRiskReview\Support\EvidenceTierLabeler;
 use Padosoft\EvidenceRiskReview\Support\ReviewEngine;
@@ -133,6 +134,10 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(EvidenceRiskReview::class, 'evidence-risk-review');
+
+        $this->app->singleton(McpToolRegistry::class, static function ($app): McpToolRegistry {
+            return new McpToolRegistry($app->make(EvidenceRiskReview::class));
+        });
     }
 
     public function boot(): void

@@ -68,3 +68,32 @@ HTTP errors use a stable envelope:
   }
 }
 ```
+
+## MCP Surface
+
+The MCP layer is framework-agnostic and can be resolved from Laravel's container:
+
+```php
+use Padosoft\EvidenceRiskReview\Mcp\McpToolRegistry;
+
+$registry = app(McpToolRegistry::class);
+
+$definitions = array_map(
+    static fn ($definition) => $definition->toArray(),
+    $registry->definitions(),
+);
+
+$result = $registry->handle('evidence_review.assess', [
+    'artifact_id' => 'answer-125',
+    'answer_text' => 'No claims to check.',
+    'options' => ['dry_run' => true],
+]);
+```
+
+Available tools:
+
+```text
+evidence_review.assess
+evidence_review.label_tier
+evidence_review.list_profiles
+```

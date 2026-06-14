@@ -341,3 +341,16 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit` (`67 tests, 900 assertions`)
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+- W5 macro PR #12 was merged into `main` as merge commit `cf4bf52`.
+
+## 2026-06-14 (W6)
+
+- Started W6 MCP Surface from `main` after W5 merge.
+- Created macro branch `macro/w6-mcp-surface` and subtask branch `task/w6-mcp-surface`.
+- W6 subtask objective: add framework-agnostic MCP tool definitions, required tool registry, handlers for assess/label/list profiles, and optional Laravel MCP adapter guarded by `class_exists()`.
+- Implemented W6 code: `McpToolDefinition`, `McpToolRegistry`, `LaravelMcpToolAdapter`, container binding, MCP README examples, and registry/handler/optional-adapter tests.
+- W6 local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit --testdox` (`73 tests, 954 assertions`)
+- Composer gate status for W6: no `composer.json` changes in W6 and W5 composer validation had passed; however the local Composer CLI stopped responding during W6 (`composer validate --strict --no-interaction --no-ansi`, verbose validate, and `composer --version --no-ansi` all timed out). JSON parse check for `composer.json` passed. Treat this as the documented local Composer timeout exemption for this subtask and retry Composer on the next macro/subtask.
