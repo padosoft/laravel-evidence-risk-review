@@ -292,3 +292,9 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit`
+- Subtask PR #7 was merged into `macro/w3-llm-engine-log` as merge commit `e7b654d`.
+- W3 macro local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
