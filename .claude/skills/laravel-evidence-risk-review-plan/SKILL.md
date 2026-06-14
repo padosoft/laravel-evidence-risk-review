@@ -28,6 +28,7 @@ Core invariants:
 - HTTP, MCP, and LLM default-OFF.
 - One `ReviewEngine`; thin PHP/HTTP/MCP/Artisan adapters.
 - Every task has tests; UI tasks require Playwright.
+- Temporary review strategy override from 2026-06-14: while completing W3-W8, do not launch local Copilot, GitHub Copilot, or Codex reviews for every W/subtask. Keep local gates, PRs, merges, and CI checks. Run one deep AI review before final hardening/release. If a review was already running before the override, fix valid findings already received but do not request another pass.
 - Local Copilot review is report-only: use stdin without `--autopilot`, no `--yolo`, and the prompt must say not to edit files, not to run shell commands, not to stage files, not to commit, to focus on correctness, tests, security, Laravel package conventions, standalone-agnostic boundaries, default-OFF behavior, and missing edge cases, and to return either `no findings` or a concise numbered list of actionable findings.
 - After every local Copilot review, run `git status` and inspect any diff before staging. Copilot CLI can still attempt filesystem edits despite report-only instructions; keep only intentional changes.
 - If local Copilot review fails three consecutive times for the same subtask because of quota, timeout, or CLI failure, record all three attempts, proceed with the PR loop, and retry local Copilot review on the next macro/subtask. This does not bypass tests, remote GitHub Copilot Code Review, or CI.

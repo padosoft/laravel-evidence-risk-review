@@ -267,3 +267,34 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit`
 - Local Copilot report-only macro review for `%TEMP%\laravel-evidence-risk-review-w2-macro.diff` failed three consecutive times with `402 additional_spend_limit_reached`. Per user-approved local policy, the W2 macro PR proceeds to remote review; retry local Copilot on the next macro/subtask.
+- Opened macro PR #6 from `macro/w2-sweep-core` into `main`. Copilot stayed invisible after reviewer attempts, so Codex fallback was triggered with `@codex review`.
+- Codex fallback passed PR #6 on commit `fac88c5b55` with no major issues. PR #6 was merged into `main` as merge commit `dff0413`.
+
+## 2026-06-14 (W3)
+
+- Started W3 LLM Boundary, Engine, Log from `main` after W2 merge.
+- Created macro branch `macro/w3-llm-engine-log` and subtask branch `task/w3-llm-engine-log`.
+- W3 subtask objective: implement LLM contract/request/response/null/callback boundary, heavy LLM evidence check, `ReviewEngine`, append-only review log store contract, null/array/database log stores, and published migration.
+- W3 guardrails: `composer validate --strict`, dependency resolution after adding `illuminate/database`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`, `vendor/bin/phpunit`, SQLite database log feature test, R26 short-circuit no-LLM test. No UI is included in W3, so Vite and Playwright are not applicable.
+- Implemented W3 code: `EvidenceReviewerLlmContract`, `LlmRequest`, `LlmResponse`, `NullEvidenceReviewerLlm`, `CallbackEvidenceReviewerLlm`, `LlmEvidenceStrengthCheck`, `ReviewEngine`, `ReviewLogStore`, `NullReviewLogStore`, `ArrayReviewLogStore`, `DatabaseReviewLogStore`, migration stub, provider bindings, and migration publishing.
+- Added W3 tests covering null/callback LLM boundary, invalid callback result, ReviewEngine no-LLM short-circuit when cheap pass clears, heavy check execution when cheap findings exist, dry-run logging skip, array log append, and SQLite database log append.
+- Local W3 gates passed:
+  - `composer update illuminate/database --with-all-dependencies --no-progress`
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
+- Local Copilot report-only review for `%TEMP%\laravel-evidence-risk-review-w3.diff` failed three consecutive times with `402 additional_spend_limit_reached`. Per user-approved local policy, W3 proceeds to PR review; retry local Copilot on the next macro/subtask.
+- User changed the review strategy: stop launching local Copilot, GitHub Copilot, or Codex reviews for every W/subtask. Continue W3-W8 with local gates, PRs, merges, and CI checks, then run one deep AI review at the end of the roadmap. PR #7 Codex review was already in flight before the change and returned three valid P2 findings; fix those, but do not request another review pass.
+- Fixed the three already-received PR #7 Codex findings locally: `llm.enabled` now gates heavy LLM paths, LLM `source_tiers` refinements are applied, and unknown `review_log.store` values fail loudly instead of silently falling back to null logging.
+- Post-fix local gates passed without a new AI review request:
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
+- Subtask PR #7 was merged into `macro/w3-llm-engine-log` as merge commit `e7b654d`.
+- W3 macro local gates passed without per-W AI review, per the temporary final-deep-review override:
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`

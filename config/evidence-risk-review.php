@@ -21,6 +21,12 @@ return [
         'enabled' => env('EVIDENCE_RISK_REVIEW_LLM_ENABLED', false),
     ],
 
+    'review_log' => [
+        'store' => env('EVIDENCE_RISK_REVIEW_LOG_STORE', 'null'),
+        'connection' => env('EVIDENCE_RISK_REVIEW_LOG_CONNECTION'),
+        'table' => env('EVIDENCE_RISK_REVIEW_LOG_TABLE', 'evidence_risk_review_logs'),
+    ],
+
     'budget' => [
         'max_llm_calls' => env('EVIDENCE_RISK_REVIEW_MAX_LLM_CALLS', 3),
         'max_tokens' => env('EVIDENCE_RISK_REVIEW_MAX_TOKENS', 6000),

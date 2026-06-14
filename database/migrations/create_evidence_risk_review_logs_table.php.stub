@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('evidence_risk_review_logs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('review_id')->index();
+            $table->string('artifact_id')->index();
+            $table->string('profile_key')->index();
+            $table->decimal('risk_score', 5, 4)->default(0);
+            $table->json('findings');
+            $table->json('claim_verdicts');
+            $table->json('source_tiers');
+            $table->json('budget');
+            $table->json('artifact');
+            $table->json('options');
+            $table->json('metadata');
+            $table->timestamp('reviewed_at');
+            $table->timestamp('created_at');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('evidence_risk_review_logs');
+    }
+};
