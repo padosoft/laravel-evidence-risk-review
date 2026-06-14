@@ -266,3 +266,4 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/pint --test`
   - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
   - `vendor/bin/phpunit`
+- Local Copilot report-only macro review for `%TEMP%\laravel-evidence-risk-review-w2-macro.diff` failed three consecutive times with `402 additional_spend_limit_reached`. Per user-approved local policy, the W2 macro PR proceeds to remote review; retry local Copilot on the next macro/subtask.
