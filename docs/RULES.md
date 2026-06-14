@@ -77,6 +77,7 @@ npm run e2e
 
 ## Review Rules
 
+- Temporary override from 2026-06-14: skip per-W/per-subtask local Copilot, GitHub Copilot, and Codex review loops for W3-W8. Keep local gates, PRs, merges, and CI checks. Run one deep AI review over the completed roadmap before final hardening/release. If an AI review was already in flight before this override, fix valid findings already received but do not request another pass.
 - Run local Copilot review against the full branch diff versus `origin/main` before pushing a task branch.
 - Local Copilot review is report-only by default: use stdin without `--autopilot`, do not use `--yolo`; the prompt must explicitly say not to edit files, not to run shell commands, not to stage files, not to commit, to focus on correctness, tests, security, Laravel package conventions, standalone-agnostic boundaries, default-OFF behavior, and missing edge cases, and to return either `no findings` or a concise numbered list of actionable findings.
 - After every local Copilot review, run `git status` and inspect any diff before staging. Copilot CLI can still attempt filesystem edits despite report-only instructions; keep only intentional changes.

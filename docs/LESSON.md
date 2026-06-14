@@ -53,3 +53,8 @@
 - Config settings maps keyed by enums should validate every key with the enum before storing it; otherwise typos can be accepted and later ignored by typed lookup methods.
 - When publishing nested Laravel package config, avoid generic host paths such as `config/profiles`; publish package-owned nested files under a package-specific directory and make the root config require that same namespaced path.
 - If a profile enables a keyword-backed check, missing `keywords` must fail loudly. An enabled check that silently becomes a no-op violates the profile contract.
+- PHPStan only exposes methods declared on `Illuminate\Database\ConnectionInterface`; tests that need schema-builder helpers should type the concrete `Illuminate\Database\Connection` returned by `DatabaseManager::connection()`.
+- R26 no-LLM behavior is easiest to preserve by making `ReviewEngine` run cheap checks first and call heavy checks only when cheap findings exist, instead of letting the generic sweep run all costs blindly.
+- Process change from 2026-06-14: per-W/per-subtask AI review loops can create too much latency. For the remainder of this roadmap, defer Copilot/Codex to one deep final review while keeping local gates, PRs, merges, and CI checks strict. Already received review findings should still be fixed.
+- In default-OFF Laravel packages, any path that can reach an injected host LLM must check the package `llm.enabled` flag before expensive or external work; relying on a Null implementation is not enough when hosts can rebind the contract.
+- When an LLM returns structured enrichment data such as `source_tiers`, either apply it with normal validation or do not spend the LLM call. Recording token use while discarding useful data is both confusing and wasteful.

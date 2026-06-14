@@ -28,6 +28,8 @@ If that file is unavailable, continue from `docs/IMPLEMENTATION_PLAN.md` and the
 
 ## Procedure
 
+Temporary review strategy override from 2026-06-14: while completing W3-W8, do not launch local Copilot, GitHub Copilot, or Codex reviews for every W/subtask. Keep local gates, PRs, merges, and CI checks. Run one deep AI review over the completed roadmap before final hardening/release. If a review was already running before the override, fix valid findings already received but do not request another pass.
+
 1. Run `git status --short --branch` before changing files.
 2. Re-read `docs/LESSON.md` and pass its relevant contents to any background worker.
 3. Work only on the current macro/subtask branch.
@@ -36,12 +38,12 @@ If that file is unavailable, continue from `docs/IMPLEMENTATION_PLAN.md` and the
 6. Preserve standalone-agnostic boundaries.
 7. Add or update tests with the change.
 8. Run relevant local gates.
-9. Run local Copilot review on the full diff versus `origin/main` in report-only mode: use stdin without `--autopilot`, do not use `--yolo`; the prompt must say not to edit files, not to run shell commands, not to stage files, not to commit, focus on correctness, tests, security, Laravel package conventions, standalone-agnostic boundaries, default-OFF behavior, and missing edge cases, and return either `no findings` or a concise numbered list of actionable findings. If local Copilot review fails three consecutive times for the same subtask because of quota, timeout, or CLI failure, record all three attempts, proceed with the PR loop, and retry local Copilot review on the next macro/subtask. This does not bypass tests, remote GitHub Copilot Code Review, or CI.
-10. After every local Copilot review, run `git status` and inspect any diff before staging. Copilot CLI can still attempt filesystem edits despite report-only instructions; keep only intentional changes.
+9. While the temporary override is active, skip per-task local Copilot review and record that the deep review is deferred to the final roadmap pass. When the override is removed, run local Copilot review on the full diff versus `origin/main` in report-only mode: use stdin without `--autopilot`, do not use `--yolo`; the prompt must say not to edit files, not to run shell commands, not to stage files, not to commit, focus on correctness, tests, security, Laravel package conventions, standalone-agnostic boundaries, default-OFF behavior, and missing edge cases, and return either `no findings` or a concise numbered list of actionable findings.
+10. After any local Copilot review, run `git status` and inspect any diff before staging. Copilot CLI can still attempt filesystem edits despite report-only instructions; keep only intentional changes.
 11. Update `docs/PROGRESS.md`.
 12. Update `docs/LESSON.md` when learning something durable.
-13. Use `.claude/skills/copilot-pr-review-loop/SKILL.md` for PR review: request/re-request Copilot after each push, verify it started, read review summaries, issue comments, inline comments, and GraphQL reviewThreads, and confirm response on the current `headRefOid` where possible.
-14. If Copilot is blocked by quota, budget, access, or prolonged non-response, use `.claude/skills/codex-pr-review-fallback/SKILL.md`: comment `@codex review`, verify `chatgpt-codex-connector[bot]` responds, fix actionable findings, and repeat.
+13. While the temporary override is active, do not use per-PR Copilot/Codex review loops; defer AI review to the final deep pass.
+14. If the temporary override is removed, use `.claude/skills/copilot-pr-review-loop/SKILL.md` and `.claude/skills/codex-pr-review-fallback/SKILL.md` as documented.
 15. If remote PR/Copilot/Codex/CI steps cannot run, record the blocker and next action.
 
 CI note: before W7, the remote CI gate means no required checks are failing or pending. W7 introduces the GitHub Actions workflow; after that, every PR must wait for configured CI to pass.
