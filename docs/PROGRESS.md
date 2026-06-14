@@ -260,3 +260,9 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
 - Codex reviewed updated commit `4b84fe326a` and found two additional P2 issues: explicit `verdict => null` still defaulted through `??`, and keyword substring matching made `improves` match `proves`. Fixed both with regression tests.
 - Codex reviewed updated commit `377054113a` and found one additional P2 issue: unknown profile `checks` keys such as `red_flags` were accepted and later ignored. Fixed by validating settings keys against `RiskCheckKind` with a regression test.
 - Codex reviewed updated commit `ba01d0f916` and found two additional P2 issues: enabled keyword-backed checks could omit `keywords` and become no-ops, and vendor publishing copied package profiles into generic host `config/profiles`. Fixed by requiring keywords for enabled keyword-backed checks and publishing profiles under package-specific `config/evidence-risk-review/profiles`.
+- Codex fallback final pass for PR #5 responded with `Didn't find any major issues` on commit `3e908ac64b`. PR #5 was merged into `macro/w2-sweep-core` as merge commit `70fa9e1`.
+- Macro W2 local gates passed on `macro/w2-sweep-core` after the subtask merge:
+  - `composer validate --strict`
+  - `vendor/bin/pint --test`
+  - `vendor/bin/phpstan analyse --memory-limit=512M --no-progress`
+  - `vendor/bin/phpunit`
