@@ -229,12 +229,41 @@ Available endpoints when enabled:
 
 ```text
 POST /evidence-risk-review/api/reviews
+GET  /evidence-risk-review/api/reviews            ?page=&per_page=&tenant=&profile=&min_verdict=
 GET  /evidence-risk-review/api/reviews/{review}
 GET  /evidence-risk-review/api/profiles
 GET  /evidence-risk-review/api/profiles/{key}
 GET  /evidence-risk-review/api/taxonomy
 GET  /evidence-risk-review/api/openapi.yaml
 ```
+
+`GET /reviews` (v1.1.0) returns a paginated review log — `{ data, current_page,
+last_page, per_page, total }` where each row is `{ review_id, artifact_id,
+profile_key, max_verdict, risk_score, tenant_id, created_at }`. It is backed by
+the `database` review-log store; with the `null` / `array` store it returns an
+empty (or in-memory) page. Filter by `profile`, `min_verdict` (keeps reviews
+whose highest-severity verdict is at least the given one), and `tenant`.
+
+### Multi-tenancy (v1.1.0)
+
+The package is tenancy-agnostic but multi-tenant-safe. Bind a
+`Padosoft\EvidenceRiskReview\Contracts\TenantResolver` in a host that runs more
+than one tenant:
+
+```php
+$this->app->singleton(
+    \Padosoft\EvidenceRiskReview\Contracts\TenantResolver::class,
+    fn () => new class implements \Padosoft\EvidenceRiskReview\Contracts\TenantResolver {
+        public function current(): ?string { return app('your.tenant.context')->id(); }
+    },
+);
+```
+
+When a resolver is bound, every persisted review is stamped with the resolved
+tenant (the client payload can never spoof it), and the log read paths
+(`GET /reviews` + `GET /reviews/{review}`) are forced to the current tenant — so
+one tenant can never read or pollute another's reviews. The default
+`NullTenantResolver` preserves the original single-tenant behaviour.
 
 HTTP errors use a stable envelope:
 

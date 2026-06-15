@@ -42,6 +42,17 @@ final readonly class ReviewController
         }
     }
 
+    public function index(Request $request): JsonResponse
+    {
+        return new JsonResponse($this->logs->paginate([
+            'page' => $request->query('page'),
+            'per_page' => $request->query('per_page'),
+            'tenant' => $request->query('tenant'),
+            'profile' => $request->query('profile'),
+            'min_verdict' => $request->query('min_verdict'),
+        ]));
+    }
+
     public function show(string $review): JsonResponse
     {
         $result = $this->logs->find($review);

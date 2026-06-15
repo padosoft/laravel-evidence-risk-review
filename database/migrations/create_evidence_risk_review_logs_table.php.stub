@@ -15,6 +15,14 @@ return new class extends Migration
             $table->string('review_id')->index();
             $table->string('artifact_id')->index();
             $table->string('profile_key')->index();
+            // Multi-tenancy: nullable so single-tenant installs keep working;
+            // populated from the artifact's tenant id (or the host TenantResolver)
+            // so the log list/show can be scoped per tenant.
+            $table->string('tenant_id')->nullable()->index();
+            // Pre-computed highest-severity verdict across the review's claims,
+            // so the log list can render + filter (min_verdict) without decoding
+            // the claim_verdicts JSON per row.
+            $table->string('max_verdict')->default('keep')->index();
             $table->decimal('risk_score', 5, 4)->default(0);
             $table->json('findings');
             $table->json('claim_verdicts');

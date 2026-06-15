@@ -24,6 +24,7 @@ use Padosoft\EvidenceRiskReview\Console\EvidenceTaxonomyCommand;
 use Padosoft\EvidenceRiskReview\Contracts\EvidenceReviewerLlmContract;
 use Padosoft\EvidenceRiskReview\Contracts\ReviewLogStore;
 use Padosoft\EvidenceRiskReview\Contracts\RiskCheck;
+use Padosoft\EvidenceRiskReview\Contracts\TenantResolver;
 use Padosoft\EvidenceRiskReview\Llm\NullEvidenceReviewerLlm;
 use Padosoft\EvidenceRiskReview\Log\ArrayReviewLogStore;
 use Padosoft\EvidenceRiskReview\Log\DatabaseReviewLogStore;
@@ -34,6 +35,7 @@ use Padosoft\EvidenceRiskReview\Support\EvidenceTierLabeler;
 use Padosoft\EvidenceRiskReview\Support\ReviewEngine;
 use Padosoft\EvidenceRiskReview\Support\RiskSweepEngine;
 use Padosoft\EvidenceRiskReview\Support\TierResolver;
+use Padosoft\EvidenceRiskReview\Tenancy\NullTenantResolver;
 
 final class EvidenceRiskReviewServiceProvider extends ServiceProvider
 {
@@ -71,6 +73,10 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
 
         $this->app->singleton(EvidenceReviewerLlmContract::class, static fn (): EvidenceReviewerLlmContract => new NullEvidenceReviewerLlm);
 
+        // Tenancy-agnostic by default (single-tenant / unscoped). A multi-tenant
+        // host rebinds this to scope the review-log read + write paths.
+        $this->app->singleton(TenantResolver::class, static fn (): TenantResolver => new NullTenantResolver);
+
         $this->app->singleton(ReviewLogStore::class, static function ($app): ReviewLogStore {
             $config = $app->make(ConfigRepository::class);
             $store = $config->get('evidence-risk-review.review_log.store', 'null');
@@ -86,6 +92,7 @@ final class EvidenceRiskReviewServiceProvider extends ServiceProvider
                 return new DatabaseReviewLogStore(
                     $app->make(DatabaseManager::class)->connection(is_string($connection) ? $connection : null),
                     is_string($table) ? $table : 'evidence_risk_review_logs',
+                    $app->make(TenantResolver::class),
                 );
             }
 
