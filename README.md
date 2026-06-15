@@ -1,5 +1,7 @@
 # Laravel Evidence Risk Review
 
+![Laravel Evidence Risk Review banner](resources/laravel-evidence-risk-preview-Banner.png)
+
 ![Laravel Evidence Risk Review dashboard](resources/screenshots/laravel-evidence-risk-review-admin-Dashboard-dark.png)
 
 [![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)](composer.json)
