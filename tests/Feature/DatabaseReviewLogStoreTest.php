@@ -49,6 +49,8 @@ final class DatabaseReviewLogStoreTest extends TestCase
             $table->string('review_id')->index();
             $table->string('artifact_id')->index();
             $table->string('profile_key')->index();
+            $table->string('tenant_id')->nullable()->index();
+            $table->string('max_verdict')->default('keep')->index();
             $table->decimal('risk_score', 5, 4)->default(0);
             $table->json('findings');
             $table->json('claim_verdicts');

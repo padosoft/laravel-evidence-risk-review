@@ -9,6 +9,7 @@ use Padosoft\EvidenceRiskReview\Http\Controllers\ReviewController;
 use Padosoft\EvidenceRiskReview\Http\Controllers\TaxonomyController;
 
 Route::post('reviews', [ReviewController::class, 'store']);
+Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('reviews/{review}', [ReviewController::class, 'show']);
 Route::get('profiles', [ProfileController::class, 'index']);
 Route::get('profiles/{key}', [ProfileController::class, 'show']);
