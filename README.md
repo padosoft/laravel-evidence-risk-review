@@ -14,7 +14,10 @@ This package labels source strength, detects risky claims, keeps LLM calls defau
 ## Table Of Contents
 
 - [Why It Exists](#why-it-exists)
+- [The Value It Adds](#the-value-it-adds)
+- [Features](#features)
 - [What Is Inside](#what-is-inside)
+- [When The AI Steps In](#when-the-ai-steps-in)
 - [Quick Start](#quick-start)
 - [PHP Surface](#php-surface)
 - [Artisan Surface](#artisan-surface)
@@ -26,6 +29,7 @@ This package labels source strength, detects risky claims, keeps LLM calls defau
 - [Testing](#testing)
 - [Architecture](#architecture)
 - [Security](#security)
+- [Part Of The Padosoft AI Suite](#part-of-the-padosoft-ai-suite)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -41,6 +45,28 @@ The core idea is simple:
 - call expensive or external LLM review only when explicitly enabled
 - return structured findings that adapters can use consistently
 
+## The Value It Adds
+
+Most "AI safety" tooling either ships a heavyweight LLM judge that costs a token call on every request, or a regex blocklist that misses the real problem. This package sits in the middle and gives you the part that is hard to build well:
+
+- **Cheaper by design.** Deterministic checks run first and resolve most artifacts for free. The expensive LLM pass is the exception, not the default — and it only runs when *you* turn it on.
+- **Auditable, not magical.** Every result is a structured list of findings with the evidence tier, the claim, and the rule that fired. You can log it, diff it, and explain it to a compliance reviewer.
+- **One engine, four doors.** The exact same `ReviewEngine` is reachable from PHP, Artisan, HTTP, and MCP. No drift between your API, your CLI, and your agent tools.
+- **Domain-aware out of the box.** Ship-ready profiles for engineering, medical, legal, and finance encode "a definitive medical claim needs a peer-reviewed source, a blog does not count."
+- **Truly standalone.** Zero coupling to any host app, knowledge base, or LLM SDK. You bind your own LLM contract; the package never picks a vendor for you.
+- **Safe defaults.** HTTP, MCP, LLM, and persistence are all default-OFF. Installing it changes nothing until you opt in.
+
+## Features
+
+- ✅ **Evidence-tier labeling** — classify each source (guideline, peer-reviewed, official, preprint, news, blog, search hint, unverified) with configurable rules.
+- ✅ **Risk sweep** — deterministic checks compare claim assertiveness against required evidence strength and flag unsupported, overconfident, or contradicted claims.
+- ✅ **Default-OFF LLM review** — optional second pass through a host-provided `EvidenceReviewerLlmContract`; no LLM SDK ships in the package.
+- ✅ **Five built-in profiles** — `default`, `engineering`, `medical`, `legal`, `finance`, each tuning which checks run and what minimum tier each assertiveness level requires.
+- ✅ **Four surfaces, one engine** — PHP facade, Artisan commands, default-OFF HTTP API (OpenAPI 3.1), and framework-agnostic MCP tool registry.
+- ✅ **Append-only review logs** — `null`, `array`, or `database` stores for an immutable evidence trail.
+- ✅ **Stable contracts** — structured findings, a stable JSON error envelope, and deterministic Artisan exit codes for CI gating.
+- ✅ **Standalone & host-agnostic** — no AskMyDocs, knowledge-base, or host-namespace dependency; enforced by architecture tests.
+
 ## What Is Inside
 
 | Surface | Purpose |
@@ -51,6 +77,37 @@ The core idea is simple:
 | MCP registry | Framework-agnostic tool definitions and handlers. |
 | Review logs | Null, in-memory, and database append-only stores. |
 | Profiles | Built-in default, engineering, medical, legal, and finance profiles. |
+
+## When The AI Steps In
+
+This package is **not** an LLM wrapper. By default it never calls a model — every review you saw above runs on pure, deterministic PHP. That keeps reviews fast, free, and reproducible.
+
+The LLM pass exists for the cases deterministic rules cannot judge alone: nuanced claim-vs-source semantic alignment, paraphrase detection, or subtle contradictions. Here is the decision flow:
+
+```text
+1. Label every source into an evidence tier            (deterministic, always)
+2. Run the risk sweep: assertiveness vs required tier   (deterministic, always)
+3. llm.enabled === true AND a contract is bound?
+       no  -> return deterministic findings             (done, zero token cost)
+       yes -> run the LLM reviewer for semantic checks   (only now is a model called)
+4. Merge findings, optionally persist, return result
+```
+
+Turn it on only when you need it, and only after binding your own reviewer:
+
+```php
+// In a service provider of the HOST app — the package ships no LLM SDK.
+$this->app->bind(
+    \Padosoft\EvidenceRiskReview\Contracts\EvidenceReviewerLlmContract::class,
+    \App\Ai\MyEvidenceReviewer::class,
+);
+```
+
+```env
+EVIDENCE_RISK_REVIEW_LLM_ENABLED=true
+```
+
+If `llm.enabled` is `true` but no contract is bound, the engine fails loudly instead of silently skipping the AI step.
 
 ## Quick Start
 
@@ -81,13 +138,30 @@ $result = EvidenceRiskReview::review(new ReviewArtifact(
 return $result->toArray();
 ```
 
-Run a dry review from the CLI:
+You get back a structured result you can inspect, log, or gate on — something like:
+
+```php
+[
+    'review_id'      => 'rev_...',
+    'artifact_id'    => 'answer-123',
+    'profile_key'    => 'default',
+    'findings'       => [],        // each finding names the claim, the tier, and the rule that fired
+    'claim_verdicts' => [],
+    'source_tiers'   => [],
+    'risk_score'     => 0,
+    // ...budget, reviewed_at, metadata
+]
+```
+
+Run the same review from the CLI:
 
 ```bash
 php artisan evidence:review artifact.json --dry-run
 ```
 
-Enable nothing else until you need it. HTTP, MCP integrations, LLM calls, and persistence are designed to stay opt-in.
+The command exits `0` when there are no findings and `2` when findings exist, so it drops straight into a CI gate.
+
+That is the whole loop. Enable nothing else until you need it — HTTP, MCP integrations, LLM calls, and persistence are all opt-in and stay off until you turn them on.
 
 ## PHP Surface
 
@@ -297,6 +371,20 @@ Business rules live in core services and DTOs. Controllers, commands, and MCP ha
 - The package has no AskMyDocs or host-app namespace dependency.
 
 Report vulnerabilities through the process in [SECURITY.md](SECURITY.md).
+
+## Part Of The Padosoft AI Suite
+
+`padosoft/laravel-evidence-risk-review` is one of the **Padosoft AI sister packages** — a family of standalone, host-agnostic Laravel building blocks for shipping trustworthy AI features. Each is independent, but they compose cleanly:
+
+| Package | What it does |
+| --- | --- |
+| **[padosoft/laravel-evidence-risk-review-admin](https://github.com/padosoft/laravel-evidence-risk-review-admin)** | 🤩 A gorgeous web admin panel for this package — browse reviews, findings, evidence tiers, and profiles from a cross-mounted SPA. The visual companion to the engine. |
+| [padosoft/laravel-ai-regolo](https://github.com/padosoft/laravel-ai-regolo) | EU-based Regolo.ai provider adapter for `laravel/ai` (chat, streaming, embeddings, reranking). |
+| [padosoft/laravel-pii-redactor](https://github.com/padosoft/laravel-pii-redactor) (+ `-admin`) | EU-grade field-level PII detection and masking inside the app boundary. |
+| [padosoft/laravel-flow](https://github.com/padosoft/laravel-flow) (+ `-admin`) | Saga engine with approval gates, webhook outbox, and replay for AI workflows. |
+| [padosoft/eval-harness](https://github.com/padosoft/eval-harness) (+ `-ui`) | Golden datasets, RAG metrics, cohorts, adversarial testing, and LLM-as-judge regression gates. |
+
+These packages power **[lopadova/askmydocs](https://github.com/lopadova/askmydocs)**, Padosoft's RAG platform — which integrates this evidence-tier and risk-review engine to surface low-confidence claims directly in its RAG prompts. If you want the full governed RAG stack rather than a single building block, start there.
 
 ## Contributing
 
