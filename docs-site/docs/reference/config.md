@@ -61,7 +61,7 @@ Consequences: default installs have zero token cost, but hosts must bind an LLM 
 ## Worked Example
 
 ```env
-EVIDENCE_RISK_REVIEW_DEFAULT_PROFILE=default
+EVIDENCE_RISK_REVIEW_PROFILE=default
 EVIDENCE_RISK_REVIEW_LOG_TABLE=evidence_risk_review_logs
 ```
 

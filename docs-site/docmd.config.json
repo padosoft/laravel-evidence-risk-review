@@ -5,13 +5,13 @@
   "src": "docs",
   "out": "_site",
   "base": "/",
-  "favicon": "assets/favicon.svg",
+  "favicon": "/assets/favicon.svg",
   "theme": {
     "name": "default",
     "defaultMode": "dark",
     "appearance": "dark",
     "customCss": [
-      "assets/custom.css"
+      "/assets/custom.css"
     ]
   },
   "autoTitleFromH1": true,

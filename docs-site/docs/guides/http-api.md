@@ -62,7 +62,7 @@ Consequences: default installs have zero token cost, but hosts must bind an LLM 
 
 ```env
 EVIDENCE_RISK_REVIEW_API_ENABLED=true
-EVIDENCE_RISK_REVIEW_API_PREFIX=evidence-risk-review/api
+EVIDENCE_RISK_REVIEW_API_PREFIX=evidence-risk-review
 ```
 
 ## Gotcha / Limits

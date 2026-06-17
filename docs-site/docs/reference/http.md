@@ -61,9 +61,9 @@ Consequences: default installs have zero token cost, but hosts must bind an LLM 
 ## Worked Example
 
 ```text
-POST /evidence-risk-review/api/reviews
-GET  /evidence-risk-review/api/profiles
-GET  /evidence-risk-review/api/taxonomy
+POST /evidence-risk-review/reviews
+GET  /evidence-risk-review/profiles
+GET  /evidence-risk-review/taxonomy
 ```
 
 ## Gotcha / Limits
