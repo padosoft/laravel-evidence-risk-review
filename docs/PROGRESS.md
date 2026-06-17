@@ -1,5 +1,34 @@
 # Progress
 
+## 2026-06-18 (docmd docs site)
+
+- Started a dedicated branch `task/docmd-docs-site` from clean `main` for the public docmd documentation site.
+- Read the canonical package spec, README, composer metadata, and repo rules before generating documentation.
+- Verified current package metadata for the docs values:
+  - package: `padosoft/laravel-evidence-risk-review`
+  - title: `laravel-evidence-risk-review`
+  - repo: `https://github.com/padosoft/laravel-evidence-risk-review`
+  - site URL: `https://doc.laravel-evidence-risk-review.padosoft.com`
+  - docs directory: `docs-site`
+  - Cloudflare Pages project: `laravel-evidence-risk-review`
+  - brand color: `#0d9488`
+- Checked current docmd package versions with `npm.cmd view`: `@docmd/core` is `0.8.6`; `docmd-search` is `0.1.0-alpha.0`.
+- Created the initial `docs-site/` structure with docmd config, package manifest, Node pin, semantic-search model pin, favicon, custom CSS, raw-component guard, and 38 Markdown documentation pages registered in navigation.
+- Added `.claude/skills/docmd-docs/SKILL.md` and `.claude/rules/rule-docmd-docs-sync.md`.
+- Added the official docs link to `README.md`.
+- Local shell note: direct `npm` via the PowerShell wrapper hung; use `npm.cmd` for install/build commands on this workstation.
+- Installed docmd dependencies through `npm.cmd`: `@docmd/core@0.8.6`, `docmd-search@0.1.0-alpha.1`, `@huggingface/transformers@4.2.0`, and `onnxruntime-node@1.26.0`; lockfileVersion is 3. Note: `npm view docmd-search version` reports `0.1.0-alpha.0`, but `@docmd/plugin-search@0.8.6` resolves `docmd-search@0.1.0-alpha.1`, so the docs package pins the actually installed compatible version.
+- Documentation gates passed from `docs-site/`: `npm run check` and `npm run build` (`docmd v0.8.6`, 39 pages generated).
+- Output verification passed: `_site/index.html` exists, generated HTML has 0 raw `:::` occurrences, KaTeX output is present, `_site/.docmd-search/manifest.json` and two batches exist, and `llms.txt`, `llms-full.txt`, and `sitemap.xml` were generated.
+- Semantic search CLI test passed with the paraphrased query `unsupported confident medical claim with weak blog evidence`, returning relevant results including `concepts/evidence-boundaries.md`, `concepts/domain-profiles.md`, and `guides/risk-sweep.md`. The CLI created a source-side `docs/.docmd-search/` cache, which was removed and added to `docs-site/.gitignore`; only root `.docmd-search/config.json` is committed.
+- Cloudflare Pages remote deploy/configuration is not completed in this local session because no Cloudflare account/dashboard/API capability is available. The required Git integration settings are documented in `docs-site/docs/operations/deploy-cloudflare.md`: production branch `main`, root `docs-site`, build `npm run build`, output `_site`, Node pinned to `20`.
+- Follow-up audit aligned the docs one-line description with the current GitHub repository description: "Evidence-aware risk review guardrails for Laravel applications, AI products, RAG systems, and MCP tools."
+- Clean build verification passed after deleting generated caches and preserving only `docs-site/.docmd-search/config.json`: `npm run check` green; `npm run build` green; docmd generated 39 pages; `_site/index.html`, `llms.txt`, `llms-full.txt`, `sitemap.xml`, and semantic search batches/manifest present; raw visible `:::` count is 0; KaTeX output present.
+- Live deploy audit: `curl -I -L --max-time 20 https://doc.laravel-evidence-risk-review.padosoft.com` failed with `Could not resolve host`, so the custom domain is not live/resolving from this workstation.
+- Pre-commit gates for docs branch: clean `npm run check` passed; clean `npm run build` passed after deleting `_site`, root semantic cache except `config.json`, and source `docs/.docmd-search`; `git diff --check` passed.
+- `composer validate --strict --no-interaction --no-ansi` timed out after 60 seconds with no stdout/stderr in this session. No PHP/composer files were changed by the docs-site work; treat this as the documented local Composer CLI timeout and retry in a later package-code task if needed.
+- Cloudflare tooling audit: `npx.cmd wrangler --version` returned `4.101.0`, but `npx.cmd wrangler whoami` failed with `Not logged in. Your auth token has expired and could not be refreshed, and the environment is non-interactive. Run wrangler login in an interactive terminal or set a CLOUDFLARE_API_TOKEN.` Remote Cloudflare Pages Git integration/deploy remains the required external action.
+
 ## 2026-06-13
 
 - Received the package implementation request and process constraints.
