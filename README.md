@@ -11,6 +11,8 @@
 
 Evidence-aware risk review guardrails for Laravel applications, AI products, RAG systems, and MCP tools.
 
+Documentation site: [doc.laravel-evidence-risk-review.padosoft.com](https://doc.laravel-evidence-risk-review.padosoft.com) (Cloudflare Pages custom domain; pending DNS/deploy verification before public launch)
+
 This package labels source strength, detects risky claims, keeps LLM calls default-OFF, records review evidence when enabled, and exposes the same core engine through PHP, Artisan, HTTP, and MCP surfaces.
 
 ## Table Of Contents

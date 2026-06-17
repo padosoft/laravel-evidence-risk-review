@@ -65,3 +65,6 @@
 - If Composer CLI stops responding even for `composer --version`, distinguish that from project validation failure. Record the exact failed commands, verify `composer.json` can be parsed, and retry Composer on the next subtask before treating it as code-related.
 - When Ruby is unavailable on Windows, `npx --yes yaml-lint .github/workflows/ci.yml` is a lightweight local sanity check for GitHub Actions workflow YAML.
 - Final deep review can hit the same Copilot quota limit as per-W reviews. If that happens, run the final review through the ChatGPT Codex Connector on the release PR and verify the bot response is tied to the current head commit.
+- For the docmd documentation site on this Windows workstation, invoke npm as `npm.cmd` from PowerShell. The `npm.ps1` wrapper can hang even for `npm --version`, while `npm.cmd --version` and `npm.cmd view ...` return successfully.
+- The public docmd site uses `docs-site/` with `.docmd-search/config.json` committed to pin `Xenova/all-MiniLM-L6-v2`; this avoids the interactive semantic-search model wizard during build and CI.
+- Running the standalone `docmd-search` CLI against `docs` can create `docs/.docmd-search/` cache files. Ignore and delete that generated source cache; commit only `docs-site/.docmd-search/config.json` so CI skips the interactive model wizard.

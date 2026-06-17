@@ -1,0 +1,304 @@
+{
+  "title": "laravel-evidence-risk-review",
+  "description": "Evidence-aware risk review guardrails for Laravel applications, AI products, RAG systems, and MCP tools.",
+  "url": "https://doc.laravel-evidence-risk-review.padosoft.com",
+  "src": "docs",
+  "out": "_site",
+  "base": "/",
+  "favicon": "/assets/favicon.svg",
+  "theme": {
+    "name": "default",
+    "defaultMode": "dark",
+    "appearance": "dark",
+    "customCss": [
+      "/assets/custom.css"
+    ]
+  },
+  "autoTitleFromH1": true,
+  "copyCode": true,
+  "pageNavigation": true,
+  "minify": true,
+  "markdown": {
+    "breaks": true
+  },
+  "layout": {
+    "spa": true,
+    "header": {
+      "enabled": true
+    },
+    "sidebar": {
+      "collapsible": true,
+      "defaultCollapsed": false
+    },
+    "optionsMenu": {
+      "position": "header",
+      "components": {
+        "search": true,
+        "themeSwitch": true
+      }
+    }
+  },
+  "footer": {
+    "style": "minimal",
+    "branding": true,
+    "content": "© Lorenzo Padovani — [Padosoft](https://www.padosoft.com) · [GitHub](https://github.com/padosoft/laravel-evidence-risk-review) · Apache-2.0",
+    "columns": [
+      {
+        "title": "Project",
+        "links": [
+          {
+            "title": "GitHub",
+            "path": "https://github.com/padosoft/laravel-evidence-risk-review",
+            "external": true
+          }
+        ]
+      }
+    ]
+  },
+  "navigation": [
+    {
+      "title": "Get Started",
+      "icon": "rocket",
+      "children": [
+        {
+          "title": "Introduction",
+          "path": "/"
+        },
+        {
+          "title": "Quickstart",
+          "path": "/quickstart"
+        },
+        {
+          "title": "Installation",
+          "path": "/installation"
+        },
+        {
+          "title": "Configuration",
+          "path": "/configuration"
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "icon": "book-open",
+      "children": [
+        {
+          "title": "PHP API",
+          "path": "/guides/php-api"
+        },
+        {
+          "title": "Artisan Commands",
+          "path": "/guides/artisan"
+        },
+        {
+          "title": "HTTP API",
+          "path": "/guides/http-api"
+        },
+        {
+          "title": "MCP Tools",
+          "path": "/guides/mcp-api"
+        },
+        {
+          "title": "LLM Integration",
+          "path": "/guides/llm-integration"
+        },
+        {
+          "title": "Profiles",
+          "path": "/guides/profiles"
+        },
+        {
+          "title": "Evidence Tiers",
+          "path": "/guides/evidence-tiers"
+        },
+        {
+          "title": "Risk Sweep",
+          "path": "/guides/risk-sweep"
+        },
+        {
+          "title": "Budgeted Review",
+          "path": "/guides/budgeted-review"
+        },
+        {
+          "title": "Review Logs",
+          "path": "/guides/review-logs"
+        },
+        {
+          "title": "Tenancy",
+          "path": "/guides/tenancy"
+        },
+        {
+          "title": "OpenAPI",
+          "path": "/guides/openapi"
+        }
+      ]
+    },
+    {
+      "title": "Concetti & Teoria",
+      "icon": "graduation-cap",
+      "children": [
+        {
+          "title": "Evidence Boundaries",
+          "path": "/concepts/evidence-boundaries"
+        },
+        {
+          "title": "Verdicts",
+          "path": "/concepts/verdicts"
+        },
+        {
+          "title": "Risk Score",
+          "path": "/concepts/risk-score"
+        },
+        {
+          "title": "Domain Profiles",
+          "path": "/concepts/domain-profiles"
+        }
+      ]
+    },
+    {
+      "title": "Architettura",
+      "icon": "network",
+      "children": [
+        {
+          "title": "Overview",
+          "path": "/architecture/overview"
+        },
+        {
+          "title": "Pipeline Workflow",
+          "path": "/architecture/pipeline"
+        },
+        {
+          "title": "Adapters",
+          "path": "/architecture/adapters"
+        },
+        {
+          "title": "Data Model",
+          "path": "/architecture/data-model"
+        },
+        {
+          "title": "Error Model",
+          "path": "/architecture/errors"
+        },
+        {
+          "title": "ADR",
+          "path": "/architecture/decisions"
+        }
+      ]
+    },
+    {
+      "title": "Best Practices",
+      "icon": "shield-check",
+      "children": [
+        {
+          "title": "Default OFF",
+          "path": "/best-practices/default-off"
+        },
+        {
+          "title": "Standalone Boundaries",
+          "path": "/best-practices/standalone"
+        },
+        {
+          "title": "Profile Design",
+          "path": "/best-practices/profiles"
+        }
+      ]
+    },
+    {
+      "title": "Operations",
+      "icon": "settings",
+      "children": [
+        {
+          "title": "Cloudflare Pages",
+          "path": "/operations/deploy-cloudflare"
+        },
+        {
+          "title": "Testing",
+          "path": "/operations/testing"
+        },
+        {
+          "title": "CI",
+          "path": "/operations/ci"
+        },
+        {
+          "title": "Security",
+          "path": "/operations/security"
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "icon": "file-code",
+      "children": [
+        {
+          "title": "PHP Reference",
+          "path": "/reference/php"
+        },
+        {
+          "title": "CLI Reference",
+          "path": "/reference/cli"
+        },
+        {
+          "title": "HTTP Reference",
+          "path": "/reference/http"
+        },
+        {
+          "title": "MCP Reference",
+          "path": "/reference/mcp"
+        },
+        {
+          "title": "Config Reference",
+          "path": "/reference/config"
+        },
+        {
+          "title": "Changelog",
+          "path": "/reference/changelog"
+        }
+      ]
+    },
+    {
+      "title": "Links",
+      "icon": "link",
+      "children": [
+        {
+          "title": "GitHub",
+          "path": "https://github.com/padosoft/laravel-evidence-risk-review",
+          "external": true
+        }
+      ]
+    }
+  ],
+  "plugins": {
+    "search": {
+      "enabled": true,
+      "semantic": true,
+      "placeholder": "Search the docs…"
+    },
+    "git": {
+      "repo": "https://github.com/padosoft/laravel-evidence-risk-review",
+      "branch": "main",
+      "editLink": true,
+      "lastUpdated": true,
+      "commitHistory": true,
+      "dateFormat": "relative"
+    },
+    "seo": {
+      "defaultDescription": "Evidence-aware risk review guardrails for Laravel applications, AI products, RAG systems, and MCP tools.",
+      "aiBots": true,
+      "openGraph": {},
+      "twitter": {
+        "cardType": "summary_large_image"
+      }
+    },
+    "sitemap": {
+      "defaultChangefreq": "weekly",
+      "defaultPriority": 0.8
+    },
+    "mermaid": {},
+    "math": {},
+    "llms": {
+      "fullContext": true
+    },
+    "analytics": {
+      "enabled": false
+    }
+  }
+}
