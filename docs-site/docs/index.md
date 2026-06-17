@@ -10,7 +10,7 @@ description: Evidence-aware risk review guardrails for Laravel applications, AI 
 Evidence-boundary labeling and risk-sweep guardrails for Laravel AI products, RAG systems, review pipelines, and MCP tools.
 
 ::: callout tip
-Official docs URL: [https://doc.laravel-evidence-risk-review.padosoft.com](https://doc.laravel-evidence-risk-review.padosoft.com)
+Documentation site: [https://doc.laravel-evidence-risk-review.padosoft.com](https://doc.laravel-evidence-risk-review.padosoft.com) (Cloudflare Pages custom domain; pending DNS/deploy verification before public launch)
 :::
 
 ::: grids
