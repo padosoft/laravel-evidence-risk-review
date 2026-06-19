@@ -11,7 +11,7 @@
 
 Evidence-aware risk review guardrails for Laravel applications, AI products, RAG systems, and MCP tools.
 
-Documentation site: [https://doc.laravel-evidence-risk-review.padosoft.com](https://doc.laravel-evidence-risk-review.padosoft.com)
+Official docs: [https://doc.laravel-evidence-risk-review.padosoft.com](https://doc.laravel-evidence-risk-review.padosoft.com)
 
 This package labels source strength, detects risky claims, keeps LLM calls default-OFF, records review evidence when enabled, and exposes the same core engine through PHP, Artisan, HTTP, and MCP surfaces.
 
