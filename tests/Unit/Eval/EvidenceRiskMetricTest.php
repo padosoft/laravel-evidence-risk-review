@@ -5,13 +5,26 @@ declare(strict_types=1);
 namespace Padosoft\EvidenceRiskReview\Tests\Unit\Eval;
 
 use Illuminate\Foundation\Application;
+use InvalidArgumentException;
 use Padosoft\EvalHarness\Datasets\DatasetSample;
 use Padosoft\EvalHarness\Exceptions\MetricException;
+use Padosoft\EvidenceRiskReview\Checks\EvidenceStrengthCheck;
+use Padosoft\EvidenceRiskReview\Contracts\EvidenceReviewerLlmContract;
 use Padosoft\EvidenceRiskReview\Contracts\ReviewLogStore;
+use Padosoft\EvidenceRiskReview\Contracts\RiskCheck;
+use Padosoft\EvidenceRiskReview\Contracts\RiskProfileContract;
+use Padosoft\EvidenceRiskReview\Data\LlmResponse;
+use Padosoft\EvidenceRiskReview\Data\ReviewArtifact;
+use Padosoft\EvidenceRiskReview\Data\ReviewFinding;
 use Padosoft\EvidenceRiskReview\Enums\ClaimAssertiveness;
 use Padosoft\EvidenceRiskReview\Enums\EvidenceTier;
+use Padosoft\EvidenceRiskReview\Enums\RiskCheckKind;
+use Padosoft\EvidenceRiskReview\Enums\RiskCostClass;
 use Padosoft\EvidenceRiskReview\Eval\EvidenceRiskMetric;
+use Padosoft\EvidenceRiskReview\Llm\CallbackEvidenceReviewerLlm;
 use Padosoft\EvidenceRiskReview\Log\ArrayReviewLogStore;
+use Padosoft\EvidenceRiskReview\Support\BudgetMeter;
+use Padosoft\EvidenceRiskReview\Support\RiskSweepEngine;
 use Padosoft\EvidenceRiskReview\Tests\TestCase;
 use RuntimeException;
 
@@ -184,7 +197,7 @@ final class EvidenceRiskMetricTest extends TestCase
                 'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
                 'sources' => [['id' => 's1']],
             ]),
-            'an answer',
+            'the answer repeats a claim',
         );
     }
 
@@ -212,19 +225,230 @@ final class EvidenceRiskMetricTest extends TestCase
         $this->assertSame(1.0, $strict->details['min_score']);
     }
 
-    public function test_the_question_is_taken_from_the_row_input(): void
+    /**
+     * The question reaches the engine, observed at the check boundary rather
+     * than inferred from a passing score: a test that only asserts `reviewed`
+     * would still pass if the metric never sent a question at all.
+     */
+    public function test_the_question_and_the_answer_reach_the_review(): void
+    {
+        $recorder = $this->recordArtifacts();
+
+        $this->metric()->score(
+            $this->sample([
+                'claims' => [['id' => 'c1', 'text' => 'it helps', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1', 'declared_tier' => EvidenceTier::Official->value]],
+            ]),
+            'In one benchmark it helps.',
+        );
+
+        $artifact = $recorder->last();
+
+        $this->assertNotNull($artifact);
+        $this->assertSame('Does it help?', $artifact->question);
+        $this->assertSame('In one benchmark it helps.', $artifact->answerText);
+        $this->assertSame('row-1', $artifact->artifactId);
+    }
+
+    /**
+     * The guarantee the metric is sold on. `labelViaLlm: false` alone does NOT
+     * give it: the engine runs its heavy checks whenever the host has the LLM
+     * integration enabled, so a host that turned it on would have made this
+     * "zero-token" metric bill a provider on every failing row.
+     */
+    public function test_no_provider_is_called_even_when_the_host_enabled_the_llm(): void
+    {
+        config()->set('evidence-risk-review.llm.enabled', true);
+
+        $calls = 0;
+        $this->container()->instance(
+            EvidenceReviewerLlmContract::class,
+            new CallbackEvidenceReviewerLlm(function () use (&$calls): LlmResponse {
+                $calls++;
+
+                return new LlmResponse;
+            }),
+        );
+
+        // A finding-producing row: without cheapOnly this is exactly the shape
+        // that triggers the heavy sweep.
+        $score = $this->metric()->score(
+            $this->sample([
+                'claims' => [[
+                    'id' => 'c1',
+                    'text' => 'This always cures the condition.',
+                    'assertiveness' => ClaimAssertiveness::Definitive->value,
+                    'source_ids' => ['forum'],
+                ]],
+                'sources' => [['id' => 'forum', 'declared_tier' => EvidenceTier::Unverified->value]],
+            ]),
+            'This always cures the condition.',
+        );
+
+        $this->assertSame(0, $calls, 'the metric must never reach a provider');
+        $this->assertLessThan(1.0, $score->score);
+    }
+
+    /**
+     * Without this the metric would be a constant per row: the engine's checks
+     * read the claims, not the answer, so changing the pipeline output while
+     * leaving the annotation alone would not move the score — useless in an
+     * eval, whose entire job is noticing when the output changes.
+     */
+    public function test_the_score_moves_when_the_pipeline_output_changes(): void
+    {
+        $evidence = [
+            'claims' => [[
+                'id' => 'c1',
+                'text' => 'This always cures the condition.',
+                'assertiveness' => ClaimAssertiveness::Definitive->value,
+                'source_ids' => ['forum'],
+            ]],
+            'sources' => [['id' => 'forum', 'declared_tier' => EvidenceTier::Unverified->value]],
+        ];
+
+        $overclaiming = $this->metric()->score($this->sample($evidence), 'This always cures the condition.');
+        $hedged = $this->metric()->score($this->sample($evidence), 'One forum thread reports an improvement.');
+
+        $this->assertLessThan(1.0, $overclaiming->score);
+        $this->assertNotSame($overclaiming->score, $hedged->score);
+    }
+
+    /**
+     * The pipeline answered something else entirely. Reviewing the leftover
+     * annotation would grade the dataset and hand back a pass.
+     */
+    public function test_an_answer_that_asserts_none_of_the_declared_claims_scores_zero(): void
     {
         $score = $this->metric()->score(
             $this->sample([
-                'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
+                'claims' => [['id' => 'c1', 'text' => 'the refund window is 30 days', 'source_ids' => ['s1']]],
                 'sources' => [['id' => 's1', 'declared_tier' => EvidenceTier::Official->value]],
+            ]),
+            'I am sorry, I cannot help with that.',
+        );
+
+        $this->assertSame(0.0, $score->score);
+        $this->assertSame(0, $score->details['asserted_claims']);
+        $this->assertStringContainsString('asserted none of the claims', $score->details['reason']);
+    }
+
+    public function test_a_claim_can_declare_a_looser_match_string(): void
+    {
+        $score = $this->metric()->score(
+            $this->sample([
+                'claims' => [[
+                    'id' => 'c1',
+                    'text' => 'Refunds are accepted for thirty days from delivery.',
+                    'source_ids' => ['s1'],
+                    'metadata' => ['match' => ['30 days', 'thirty days']],
+                ]],
+                'sources' => [['id' => 's1', 'declared_tier' => EvidenceTier::Official->value]],
+            ]),
+            'You have 30 days from delivery.',
+        );
+
+        $this->assertSame(1, $score->details['asserted_claims']);
+    }
+
+    public function test_matching_ignores_case_and_whitespace(): void
+    {
+        $score = $this->metric()->score(
+            $this->sample([
+                'claims' => [['id' => 'c1', 'text' => 'It   helps', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1', 'declared_tier' => EvidenceTier::Official->value]],
+            ]),
+            'In one benchmark IT HELPS a little.',
+        );
+
+        $this->assertSame(1, $score->details['asserted_claims']);
+    }
+
+    /**
+     * Absent and malformed are different outcomes: an un-annotated row lets the
+     * metric be adopted a row at a time, a broken block must not enter the
+     * aggregate as a pass.
+     */
+    public function test_an_evidence_block_that_is_not_a_map_raises(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence must be a map');
+
+        $this->metric()->score(
+            new DatasetSample(id: 'row-1', input: [], expectedOutput: 'a', metadata: ['evidence' => 'oops']),
+            'an answer',
+        );
+    }
+
+    public function test_claims_that_are_not_a_list_raise(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence.claims must be a list');
+
+        $this->metric()->score($this->sample(['claims' => 'oops', 'sources' => [['id' => 's1']]]), 'an answer');
+    }
+
+    public function test_a_claim_without_an_id_raises_even_when_the_answer_does_not_match_it(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('needs a non-empty string [id]');
+
+        $this->metric()->score(
+            $this->sample(['claims' => [['text' => 'missing its id']], 'sources' => [['id' => 's1']]]),
+            'something else entirely',
+        );
+    }
+
+    /**
+     * A profile that is present and unusable must not fall back: the row would
+     * be judged by a different policy than it asked for.
+     */
+    public function test_a_non_string_profile_raises(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence.profile must be a non-empty string');
+
+        $this->metric()->score(
+            $this->sample([
+                'profile' => 123,
+                'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1']],
             ]),
             'an answer',
         );
+    }
 
-        // The artifact id ties the review back to the dataset row it came from.
-        $this->assertTrue($score->details['reviewed']);
-        $this->assertNotSame('', $score->details['review_id']);
+    /**
+     * A configuration typo in a threshold should fail, not silently turn the
+     * metric into always-pass and move an aggregate gate.
+     */
+    public function test_a_threshold_outside_the_unit_interval_is_refused(): void
+    {
+        foreach ([-0.1, 1.1, NAN, INF] as $invalid) {
+            try {
+                new EvidenceRiskMetric($this->container(), minScore: $invalid);
+                $this->fail(sprintf('A minimum score of %s should have been refused.', var_export($invalid, true)));
+            } catch (InvalidArgumentException $e) {
+                $this->assertStringContainsString('between 0 and 1', $e->getMessage());
+            }
+        }
+    }
+
+    private function recordArtifacts(): ArtifactRecorder
+    {
+        $recorder = new ArtifactRecorder;
+
+        // Injected as an extra check so the artifact is observed exactly where
+        // the engine hands it to one, without stubbing the engine itself.
+        $this->container()->instance(
+            RiskSweepEngine::class,
+            new RiskSweepEngine([
+                $recorder,
+                $this->resolve(EvidenceStrengthCheck::class),
+            ]),
+        );
+
+        return $recorder;
     }
 
     /**
@@ -252,5 +476,45 @@ final class EvidenceRiskMetricTest extends TestCase
         }
 
         return $this->app;
+    }
+}
+
+/**
+ * A no-op check that keeps the artifact it was handed, so a test can assert on
+ * what actually reached the engine rather than on a score that would look the
+ * same either way.
+ */
+final class ArtifactRecorder implements RiskCheck
+{
+    private ?ReviewArtifact $artifact = null;
+
+    public function kind(): RiskCheckKind
+    {
+        return RiskCheckKind::RedFlag;
+    }
+
+    public function costClass(): RiskCostClass
+    {
+        return RiskCostClass::Cheap;
+    }
+
+    public function supports(RiskProfileContract $profile): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return list<ReviewFinding>
+     */
+    public function run(ReviewArtifact $artifact, RiskProfileContract $profile, BudgetMeter $meter): array
+    {
+        $this->artifact = $artifact;
+
+        return [];
+    }
+
+    public function last(): ?ReviewArtifact
+    {
+        return $this->artifact;
     }
 }

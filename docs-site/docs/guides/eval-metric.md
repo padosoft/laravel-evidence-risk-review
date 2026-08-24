@@ -93,9 +93,64 @@ is a failure.** If a dataset disagrees, move the line:
 new EvidenceRiskMetric($app, minScore: 1.0)
 ```
 
+A threshold outside `[0, 1]` raises: a configuration typo should fail rather
+than quietly turn the metric into always-pass.
+
 A `minScore` makes the metric binary on purpose — some datasets want partial
 credit for a softenable overstatement, and some want a line. Neither is right
 for both.
+
+## What it grades, precisely
+
+The engine's checks read a row's **claims**, not its answer text. On its own
+that would make this metric a constant per row — change the pipeline output,
+leave the annotation alone, and the score would not move, which is useless in
+an eval whose entire job is noticing when the output changes.
+
+So the metric puts the answer back in the loop:
+
+1. Each declared claim is reviewed **only if the produced answer actually
+   asserted it**. A claim the pipeline never made is dropped, not failed — you
+   are not on the hook for a claim you did not make.
+2. A row whose answer asserted **none** of its declared claims scores **0.0**
+   with `"reason": "The answer asserted none of the claims this row declared."`
+   The pipeline answered something else entirely; reviewing the leftover
+   annotation would grade the dataset and hand back a pass.
+
+Matching is normalised containment — case-folded, whitespace-collapsed — of the
+claim's own `text`, or of a `metadata.match` string (or list) when the row
+declares one:
+
+```yaml
+claims:
+  - id: c1
+    text: 'Refunds are accepted for thirty days from delivery.'
+    source_ids: [policy-page]
+    metadata:
+      match: ['30 days', 'thirty days']
+```
+
+It is crude on purpose. Anything cleverer means a model, and the point of this
+metric is that it never calls one.
+
+**What it still cannot do:** notice a claim the answer made that the row never
+declared. Extracting claims from free text is a model's job. Pair it with a
+judge for that half — which is the arrangement this page recommends anyway.
+
+## No provider call, guaranteed
+
+Every review runs with `cheap_only: true`, not merely `label_via_llm: false`.
+The distinction matters: `labelViaLlm` only governs source-tier refinement, and
+the engine still runs its **heavy** (LLM-backed) checks whenever
+`evidence-risk-review.llm.enabled` is on and a cheap check produced a finding.
+
+So a host that had turned the LLM integration on would have made this
+"zero-token" metric bill a provider on exactly the rows that were already
+failing. `cheapOnly` wins over the config flag, and a test asserts a bound LLM
+is never invoked.
+
+`ReviewOptions::$cheapOnly` is available to any caller that needs the same
+guarantee — a health check, a request path with a latency budget.
 
 ## Rows nobody has annotated yet
 
@@ -148,15 +203,25 @@ check produces one, is a concrete fix somebody can apply.
 log a compliance team reads. That log records what production did; an eval is
 not production.
 
-**A malformed evidence block raises, it does not score zero.** A missing claim
-`id` or an unknown profile key is a broken *dataset row*, and scoring it as
-"ungrounded" would blame the pipeline for the harness's own input. The harness
-records it as a metric failure, names the row, and leaves the score out of the
-aggregate:
+**A malformed evidence block raises, it does not score zero.** *Absent* and
+*malformed* are deliberately different outcomes: a row with no `evidence` key
+has not been annotated yet, while a row whose block is present and wrong is a
+broken dataset row, and treating it as un-annotated would let it into the
+aggregate as a **pass**.
 
-```
-Row 'refund-window' could not be reviewed: Missing required key [id] …
-```
+Raised, with the row named, and validated *before* the asserted-claims filter so
+a broken row cannot be quietly dropped for failing to match the answer:
+
+| Refused | Message |
+|---|---|
+| `evidence: 'oops'` | `metadata.evidence must be a map; got string.` |
+| `claims: 'oops'` | `metadata.evidence.claims must be a list; got string.` |
+| a claim without `id` or `text` | `every metadata.evidence.claims entry needs a non-empty string [id].` |
+| `profile: 123` | `metadata.evidence.profile must be a non-empty string; got int.` |
+
+A `minScore` outside `[0, 1]` — or `NAN` — is refused by the constructor, since
+a typo there silently turns the metric into always-pass or always-fail and moves
+an aggregate gate.
 
 ## Where it fits next to a judge
 

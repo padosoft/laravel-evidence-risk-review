@@ -9,11 +9,20 @@ use Padosoft\EvidenceRiskReview\ValueObjects\ReviewBudget;
 
 final readonly class ReviewOptions
 {
+    /**
+     * @param  bool  $cheapOnly  skip every heavy (LLM-backed) check regardless of
+     *                           `evidence-risk-review.llm.enabled`. `labelViaLlm`
+     *                           only governs source-tier refinement, so it is not
+     *                           enough for a caller that must guarantee no
+     *                           provider call happens — an eval metric, a health
+     *                           check, a request path with a latency budget.
+     */
     public function __construct(
         public string $profileKey = 'default',
         public ?ReviewBudget $budget = null,
         public bool $labelViaLlm = false,
         public bool $dryRun = false,
+        public bool $cheapOnly = false,
     ) {}
 
     /**
@@ -38,11 +47,12 @@ final readonly class ReviewOptions
             budget: $budget === null ? null : ReviewBudget::fromArray($budget),
             labelViaLlm: self::boolean($payload, 'label_via_llm', false),
             dryRun: self::boolean($payload, 'dry_run', false),
+            cheapOnly: self::boolean($payload, 'cheap_only', false),
         );
     }
 
     /**
-     * @return array{profile_key: string, budget: array<string, int>|null, label_via_llm: bool, dry_run: bool}
+     * @return array{profile_key: string, budget: array<string, int>|null, label_via_llm: bool, dry_run: bool, cheap_only: bool}
      */
     public function toArray(): array
     {
@@ -51,6 +61,7 @@ final readonly class ReviewOptions
             'budget' => $this->budget?->toArray(),
             'label_via_llm' => $this->labelViaLlm,
             'dry_run' => $this->dryRun,
+            'cheap_only' => $this->cheapOnly,
         ];
     }
 

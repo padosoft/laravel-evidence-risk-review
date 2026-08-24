@@ -477,3 +477,25 @@ and for free, so it can run on **every** row of **every** build.
   `phpunit` (95, 1 skipped live test).
 - Docs: `docs-site/docs/guides/eval-metric.md` + nav; README feature bullet, TOC
   entry and `## Eval Metric` section.
+- Review round on PR #24 found six issues, all real, two contract-breaking:
+  1. `labelViaLlm: false` does **not** stop the heavy checks — the engine runs
+     them whenever `llm.enabled` is on and a cheap check found something, so a
+     host with the integration enabled would have made the "zero-token" metric
+     bill a provider on exactly the failing rows. Added
+     `ReviewOptions::$cheapOnly`, honoured by `ReviewEngine` and winning over the
+     config flag, with a test that a bound LLM is never invoked.
+  2. The score did not depend on `actualOutput` at all — no built-in check reads
+     `answerText` — so it graded the annotation and would have been a constant
+     per row, unable to detect a regression. Claims are now filtered to the ones
+     the produced answer actually asserted (normalised containment of the claim
+     text or a declared `metadata.match`), and a row whose answer asserted none
+     scores 0.0 with an explicit reason.
+  3. A present-but-malformed `evidence` block scored 1.0 as "not annotated".
+     Absent and malformed are now different outcomes, validated **before** the
+     asserted-claims filter so a broken row cannot be dropped for not matching.
+  4. `profile: 123` fell back silently to the default policy; now raises.
+  5. `minScore` outside `[0,1]` (or NAN/INF) silently made the metric always-pass
+     or always-fail; refused in the constructor.
+  6. The question-reaches-the-engine test asserted nothing that would fail if the
+     feature did nothing; it now observes the artifact at the check boundary.
+- Tests: 95 → 105 (1082 assertions). Gates green.

@@ -394,11 +394,12 @@ The claims and sources live on the row, because only the dataset knows what the 
 
 The metric scores `1 − risk_score`, which puts the harness's 0.5 pass line between `soften` (0.67, passes) and `flag_for_human_review` (0.33, fails): *a hedge-worthy overstatement is a note; an answer that needs a human is a failure.* Pass `minScore` to make it binary instead.
 
-Three behaviours worth knowing:
+Four behaviours worth knowing:
 
-- **A row with no `metadata.evidence` block scores 1.0** and says so in its details. Failing every un-annotated row would make the metric impossible to adopt on a dataset that already exists.
+- **The score is a function of the answer, not just the annotation.** Each declared claim is reviewed only if the produced answer actually asserted it, and a row whose answer asserted none of them scores 0.0 — otherwise the metric would be a constant per row and could not detect a regression at all.
+- **No provider call, guaranteed** (`cheap_only: true`, not merely `label_via_llm: false`): the engine otherwise runs its heavy LLM checks whenever the host has the integration enabled, which would have billed a provider on exactly the rows that were already failing.
+- **A row with no `metadata.evidence` block scores 1.0** and says so in its details. Failing every un-annotated row would make the metric impossible to adopt on a dataset that already exists — but a block that is *present and malformed* raises, because treating it as un-annotated would let a broken row into the aggregate as a pass.
 - **Reviews run during an eval never reach the audit log** (`dry_run: true`). That log records what production did; a CI run is not production.
-- **A malformed evidence block raises rather than scoring 0.0.** A missing claim `id` is a broken dataset row, and scoring it "ungrounded" would blame the pipeline for the harness's own input.
 
 Full guide: [Eval Metric](https://doc.laravel-evidence-risk-review.padosoft.com/guides/eval-metric).
 
