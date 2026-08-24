@@ -441,3 +441,39 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpunit` (`80 tests, 966 assertions, 1 skipped live test`)
   - `npx --yes yaml-lint .github/workflows/ci.yml`
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+
+## 2026-08-24 — The engine as an eval metric (`evidence-risk`)
+
+`padosoft/eval-harness` scores a pipeline against a golden dataset, and its most
+capable metric — `llm-as-judge` — is also its most expensive and least
+reproducible: a thousand rows at three repetitions is three thousand paid calls
+that exist purely to grade, by a grader that is itself a model and disagrees with
+itself between runs. This engine answers a narrower question deterministically
+and for free, so it can run on **every** row of **every** build.
+
+- `src/Eval/EvidenceRiskMetric.php` — implements `Padosoft\EvalHarness\Metrics\Metric`.
+  Scores `1 - riskScore`, which puts the harness's 0.5 pass line between `soften`
+  (0.67, passes) and `flag_for_human_review` (0.33, fails). `minScore` makes it
+  binary when a dataset wants a line instead of partial credit.
+- Claims and sources come from the row's `metadata.evidence` block, because only
+  the dataset knows what the pipeline was supposed to have grounded itself in.
+- **A row with no evidence block scores 1.0** and says so in its details.
+  Failing every un-annotated row would make the metric impossible to adopt on a
+  dataset that already exists. An empty block counts as no block.
+- **`dry_run: true` on every review**: a CI job must not write thousands of
+  synthetic rows into the log a compliance team reads.
+- **A malformed evidence block raises `MetricException`** naming the row, rather
+  than scoring 0.0 — a missing claim `id` is a broken dataset row, and scoring it
+  "ungrounded" would blame the pipeline for the harness's own input.
+- Findings (check, claim, verdict, **reason**, suggested rewrite) reach the
+  metric details, so they land in the harness's JSON report and its run briefing.
+- Dependency direction: `padosoft/eval-harness` is `require-dev` + `suggest`
+  here, never a runtime requirement, and eval-harness knows nothing about this
+  package. Its `MetricResolver` resolves any FQCN through the container, so
+  `withMetrics([EvidenceRiskMetric::class])` is the whole integration.
+- Tests: +11 (`95 tests, 1059 assertions`, was 84). New file:
+  `tests/Unit/Eval/EvidenceRiskMetricTest.php`.
+- Local gates green: `composer validate --strict`; `pint`; `phpstan` (no errors);
+  `phpunit` (95, 1 skipped live test).
+- Docs: `docs-site/docs/guides/eval-metric.md` + nav; README feature bullet, TOC
+  entry and `## Eval Metric` section.
