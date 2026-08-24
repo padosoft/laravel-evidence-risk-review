@@ -27,8 +27,12 @@
     "require-dev": {
         "laravel/pint": "^1.18",
         "orchestra/testbench": "^11.0",
+        "padosoft/eval-harness": "^1.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^12.5"
+    },
+    "suggest": {
+        "padosoft/eval-harness": "Score answer groundedness inside a golden-dataset eval with the zero-token `evidence-risk` metric (Padosoft\\EvidenceRiskReview\\Eval\\EvidenceRiskMetric)."
     },
     "autoload": {
         "psr-4": {

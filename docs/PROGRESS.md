@@ -441,3 +441,61 @@ Codex fallback final pass on PR #2 returned no major issues for commit `cee7d9f`
   - `vendor/bin/phpunit` (`80 tests, 966 assertions, 1 skipped live test`)
   - `npx --yes yaml-lint .github/workflows/ci.yml`
   - `npx --yes @redocly/cli@latest lint resources/openapi.yaml`
+
+## 2026-08-24 — The engine as an eval metric (`evidence-risk`)
+
+`padosoft/eval-harness` scores a pipeline against a golden dataset, and its most
+capable metric — `llm-as-judge` — is also its most expensive and least
+reproducible: a thousand rows at three repetitions is three thousand paid calls
+that exist purely to grade, by a grader that is itself a model and disagrees with
+itself between runs. This engine answers a narrower question deterministically
+and for free, so it can run on **every** row of **every** build.
+
+- `src/Eval/EvidenceRiskMetric.php` — implements `Padosoft\EvalHarness\Metrics\Metric`.
+  Scores `1 - riskScore`, which puts the harness's 0.5 pass line between `soften`
+  (0.67, passes) and `flag_for_human_review` (0.33, fails). `minScore` makes it
+  binary when a dataset wants a line instead of partial credit.
+- Claims and sources come from the row's `metadata.evidence` block, because only
+  the dataset knows what the pipeline was supposed to have grounded itself in.
+- **A row with no evidence block scores 1.0** and says so in its details.
+  Failing every un-annotated row would make the metric impossible to adopt on a
+  dataset that already exists. An empty block counts as no block.
+- **`dry_run: true` on every review**: a CI job must not write thousands of
+  synthetic rows into the log a compliance team reads.
+- **A malformed evidence block raises `MetricException`** naming the row, rather
+  than scoring 0.0 — a missing claim `id` is a broken dataset row, and scoring it
+  "ungrounded" would blame the pipeline for the harness's own input.
+- Findings (check, claim, verdict, **reason**, suggested rewrite) reach the
+  metric details, so they land in the harness's JSON report and its run briefing.
+- Dependency direction: `padosoft/eval-harness` is `require-dev` + `suggest`
+  here, never a runtime requirement, and eval-harness knows nothing about this
+  package. Its `MetricResolver` resolves any FQCN through the container, so
+  `withMetrics([EvidenceRiskMetric::class])` is the whole integration.
+- Tests: +11 (`95 tests, 1059 assertions`, was 84). New file:
+  `tests/Unit/Eval/EvidenceRiskMetricTest.php`.
+- Local gates green: `composer validate --strict`; `pint`; `phpstan` (no errors);
+  `phpunit` (95, 1 skipped live test).
+- Docs: `docs-site/docs/guides/eval-metric.md` + nav; README feature bullet, TOC
+  entry and `## Eval Metric` section.
+- Review round on PR #24 found six issues, all real, two contract-breaking:
+  1. `labelViaLlm: false` does **not** stop the heavy checks — the engine runs
+     them whenever `llm.enabled` is on and a cheap check found something, so a
+     host with the integration enabled would have made the "zero-token" metric
+     bill a provider on exactly the failing rows. Added
+     `ReviewOptions::$cheapOnly`, honoured by `ReviewEngine` and winning over the
+     config flag, with a test that a bound LLM is never invoked.
+  2. The score did not depend on `actualOutput` at all — no built-in check reads
+     `answerText` — so it graded the annotation and would have been a constant
+     per row, unable to detect a regression. Claims are now filtered to the ones
+     the produced answer actually asserted (normalised containment of the claim
+     text or a declared `metadata.match`), and a row whose answer asserted none
+     scores 0.0 with an explicit reason.
+  3. A present-but-malformed `evidence` block scored 1.0 as "not annotated".
+     Absent and malformed are now different outcomes, validated **before** the
+     asserted-claims filter so a broken row cannot be dropped for not matching.
+  4. `profile: 123` fell back silently to the default policy; now raises.
+  5. `minScore` outside `[0,1]` (or NAN/INF) silently made the metric always-pass
+     or always-fail; refused in the constructor.
+  6. The question-reaches-the-engine test asserted nothing that would fail if the
+     feature did nothing; it now observes the artifact at the check boundary.
+- Tests: 95 → 105 (1082 assertions). Gates green.

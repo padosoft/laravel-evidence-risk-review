@@ -30,6 +30,7 @@ This package labels source strength, detects risky claims, keeps LLM calls defau
 - [Configuration](#configuration)
 - [Profiles And Taxonomy](#profiles-and-taxonomy)
 - [Review Logs](#review-logs)
+- [Eval Metric](#eval-metric)
 - [Testing](#testing)
 - [Architecture](#architecture)
 - [Security](#security)
@@ -68,6 +69,7 @@ Most "AI safety" tooling either ships a heavyweight LLM judge that costs a token
 - ✅ **Five built-in profiles** — `default`, `engineering`, `medical`, `legal`, `finance`, each tuning which checks run and what minimum tier each assertiveness level requires.
 - ✅ **Four surfaces, one engine** — PHP facade, Artisan commands, default-OFF HTTP API (OpenAPI 3.1), and framework-agnostic MCP tool registry.
 - ✅ **Append-only review logs** — `null`, `array`, or `database` stores for an immutable evidence trail.
+- ✅ **Zero-token eval metric** — plug the engine into `padosoft/eval-harness` as `evidence-risk`: deterministic groundedness scoring with no provider call, so it runs on every row of every build next to the LLM judge you can only afford on some of them.
 - ✅ **Stable contracts** — structured findings, a stable JSON error envelope, and deterministic Artisan exit codes for CI gating.
 - ✅ **Standalone & host-agnostic** — no AskMyDocs, knowledge-base, or host-namespace dependency; enforced by architecture tests.
 
@@ -355,6 +357,51 @@ EVIDENCE_RISK_REVIEW_LOG_STORE=database
 EVIDENCE_RISK_REVIEW_LOG_CONNECTION=mysql
 EVIDENCE_RISK_REVIEW_LOG_TABLE=evidence_risk_review_logs
 ```
+
+## Eval Metric
+
+`padosoft/eval-harness` scores a pipeline against a golden dataset, and its most capable metric — `llm-as-judge` — is also its most expensive: a thousand rows at three repetitions is three thousand paid calls that exist purely to grade, by a grader that is itself a model and disagrees with itself between runs.
+
+This engine answers a narrower question — *is this answer actually supported by the sources it cites, and does its confidence match its evidence?* — **deterministically, with no provider call at all**. So it costs nothing per row and can run on **every** row of **every** build, next to the judge you run on some of them.
+
+```bash
+composer require --dev padosoft/eval-harness
+```
+
+```php
+use Padosoft\EvidenceRiskReview\Eval\EvidenceRiskMetric;
+
+$eval->dataset('rag.grounding')
+    ->loadFromYaml(database_path('evals/rag.grounding.yaml'))
+    ->withMetrics(['llm-as-judge', EvidenceRiskMetric::class])
+    ->register();
+```
+
+The claims and sources live on the row, because only the dataset knows what the pipeline was supposed to have grounded itself in:
+
+```yaml
+- id: refund-window
+  input: { question: 'What is the refund window?' }
+  expected_output: '30 days from delivery'
+  metadata:
+    evidence:
+      profile: default
+      claims:
+        - { id: c1, text: 'Refunds are accepted for 30 days.', assertiveness: definitive, source_ids: [policy] }
+      sources:
+        - { id: policy, url: 'https://example.test/returns', declared_tier: official }
+```
+
+The metric scores `1 − risk_score`, which puts the harness's 0.5 pass line between `soften` (0.67, passes) and `flag_for_human_review` (0.33, fails): *a hedge-worthy overstatement is a note; an answer that needs a human is a failure.* Pass `minScore` to make it binary instead.
+
+Four behaviours worth knowing:
+
+- **The score is a function of the answer, not just the annotation.** Each declared claim is reviewed only if the produced answer actually asserted it, and a row whose answer asserted none of them scores 0.0 — otherwise the metric would be a constant per row and could not detect a regression at all.
+- **No provider call, guaranteed** (`cheap_only: true`, not merely `label_via_llm: false`): the engine otherwise runs its heavy LLM checks whenever the host has the integration enabled, which would have billed a provider on exactly the rows that were already failing.
+- **A row with no `metadata.evidence` block scores 1.0** and says so in its details. Failing every un-annotated row would make the metric impossible to adopt on a dataset that already exists — but a block that is *present and malformed* raises, because treating it as un-annotated would let a broken row into the aggregate as a pass.
+- **Reviews run during an eval never reach the audit log** (`dry_run: true`). That log records what production did; a CI run is not production.
+
+Full guide: [Eval Metric](https://doc.laravel-evidence-risk-review.padosoft.com/guides/eval-metric).
 
 ## Testing
 

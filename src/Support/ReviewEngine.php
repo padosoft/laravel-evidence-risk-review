@@ -37,11 +37,14 @@ final readonly class ReviewEngine
         $meter = new BudgetMeter($options->budget ?? $this->configuredBudget());
         $sourceTiers = $this->sourceTiers($artifact);
         $cheapFindings = $this->sweep->sweepCheap($artifact, $profile, $meter);
-        $heavyFindings = $cheapFindings === [] || ! $this->llmEnabled()
+        // `cheapOnly` wins over the config flag on purpose: a caller that
+        // needs a guarantee of no provider call must be able to have one
+        // without depending on how the host happened to configure the package.
+        $heavyFindings = $options->cheapOnly || $cheapFindings === [] || ! $this->llmEnabled()
             ? []
             : $this->sweep->sweepHeavy($artifact, $profile, $meter);
 
-        if ($options->labelViaLlm && $this->llmEnabled()) {
+        if ($options->labelViaLlm && ! $options->cheapOnly && $this->llmEnabled()) {
             $sourceTiers = $this->refineSourceTiers($artifact, $sourceTiers, $meter);
         }
 
@@ -60,6 +63,7 @@ final readonly class ReviewEngine
                 'dry_run' => $options->dryRun,
                 'heavy_checks_run' => $heavyFindings !== [],
                 'llm_enabled' => $this->llmEnabled(),
+                'cheap_only' => $options->cheapOnly,
             ],
         );
 
