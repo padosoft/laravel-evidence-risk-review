@@ -10,11 +10,14 @@ use Padosoft\EvalHarness\Datasets\DatasetSample;
 use Padosoft\EvalHarness\Exceptions\MetricException;
 use Padosoft\EvalHarness\Metrics\Metric;
 use Padosoft\EvalHarness\Metrics\MetricScore;
+use Padosoft\EvidenceRiskReview\Data\ClaimRef;
 use Padosoft\EvidenceRiskReview\Data\ReviewArtifact;
 use Padosoft\EvidenceRiskReview\Data\ReviewFinding;
 use Padosoft\EvidenceRiskReview\Data\ReviewOptions;
 use Padosoft\EvidenceRiskReview\Data\ReviewResult;
+use Padosoft\EvidenceRiskReview\Data\SourceRef;
 use Padosoft\EvidenceRiskReview\EvidenceRiskReview;
+use Padosoft\EvidenceRiskReview\Profiles\DomainProfileRegistry;
 use Padosoft\EvidenceRiskReview\ValueObjects\EvidenceTierValue;
 use Throwable;
 
@@ -151,9 +154,15 @@ final class EvidenceRiskMetric implements Metric
         }
 
         $declared = $this->claimsOf($evidence, $sample);
-        // Resolved before the short circuit below: a row asking for a profile
-        // that cannot be used is broken whether or not its answer matched.
-        $this->profileFor($evidence, $sample);
+        $sources = $this->sourcesOf($evidence, $sample);
+
+        // Resolved — not merely type-checked — before the short circuit below.
+        // A row asking for a profile that does not exist is broken whether or
+        // not its answer happened to match, and validating only the *shape* of
+        // the key would let `profile: no-such-profile` score 0.0 instead of
+        // raising.
+        $profileKey = $this->resolveProfile($evidence, $sample);
+
         $asserted = $this->assertedClaims($declared, $actualOutput);
 
         // The pipeline answered something other than what this row is about.
@@ -168,7 +177,7 @@ final class EvidenceRiskMetric implements Metric
             ]);
         }
 
-        $result = $this->review($sample, $actualOutput, $evidence, $asserted);
+        $result = $this->review($sample, $actualOutput, $profileKey, $asserted, $sources);
         $score = round(1.0 - $result->riskScore, 6);
         $threshold = $this->minScore;
 
@@ -208,25 +217,33 @@ final class EvidenceRiskMetric implements Metric
     }
 
     /**
-     * @param  array<string, mixed>  $evidence
-     * @param  list<array<string, mixed>>  $claims  the declared claims the answer actually asserted
+     * @param  list<ClaimRef>  $claims  the declared claims the answer actually asserted
+     * @param  list<SourceRef>  $sources
      */
-    private function review(DatasetSample $sample, string $actualOutput, array $evidence, array $claims): ReviewResult
-    {
-        $payload = [
-            'artifact_id' => $sample->id,
-            'answer_text' => $actualOutput,
-            'question' => $this->questionFrom($sample),
-            'claims' => $claims,
-            'sources' => $evidence['sources'] ?? [],
-            'metadata' => ['eval_dataset_row' => $sample->id],
-        ];
+    private function review(
+        DatasetSample $sample,
+        string $actualOutput,
+        string $profileKey,
+        array $claims,
+        array $sources,
+    ): ReviewResult {
+        // Built from validated DTOs rather than from `fromArray`, so every
+        // claim and source has already been parsed — and any failure already
+        // reported against the row — before the engine sees them.
+        $artifact = new ReviewArtifact(
+            artifactId: $sample->id,
+            answerText: $actualOutput,
+            claims: $claims,
+            sources: $sources,
+            question: $this->questionFrom($sample),
+            metadata: ['eval_dataset_row' => $sample->id],
+        );
 
         try {
             return $this->reviewer()->review(
-                ReviewArtifact::fromArray($payload),
+                $artifact,
                 new ReviewOptions(
-                    profileKey: $this->profileFor($evidence, $sample),
+                    profileKey: $profileKey,
                     labelViaLlm: false,
                     // Never written to the review log: that log records what
                     // production did, and a CI run is not production.
@@ -282,6 +299,13 @@ final class EvidenceRiskMetric implements Metric
             ));
         }
 
+        // A non-empty list is an array, so `evidence: ['oops']` would otherwise
+        // reach the empty-block short circuit below and score 1.0 as
+        // un-annotated — a present, malformed block reported as absent.
+        if ($evidence !== [] && array_is_list($evidence)) {
+            throw $this->malformed($sample, 'metadata.evidence must be a map, not a list.');
+        }
+
         foreach (['claims', 'sources'] as $key) {
             if (array_key_exists($key, $evidence) && ! is_array($evidence[$key])) {
                 throw $this->malformed($sample, sprintf(
@@ -301,16 +325,22 @@ final class EvidenceRiskMetric implements Metric
     }
 
     /**
-     * The declared claims, as maps.
+     * The declared claims, parsed into DTOs.
+     *
+     * Every field is validated here — not only `id` and `text` — because
+     * {@see self::assertedClaims()} runs next and drops any claim the answer
+     * did not assert. A claim with a valid id and a malformed `assertiveness`
+     * or `source_ids` would otherwise be silently dropped and the row scored,
+     * instead of raising against the broken annotation.
      *
      * @param  array<string, mixed>  $evidence
-     * @return list<array<string, mixed>>
+     * @return list<ClaimRef>
      */
     private function claimsOf(array $evidence, DatasetSample $sample): array
     {
         $claims = [];
 
-        foreach ($evidence['claims'] ?? [] as $claim) {
+        foreach ($evidence['claims'] ?? [] as $index => $claim) {
             if (! is_array($claim)) {
                 throw $this->malformed($sample, sprintf(
                     'every metadata.evidence.claims entry must be a map; got %s.',
@@ -318,24 +348,52 @@ final class EvidenceRiskMetric implements Metric
                 ));
             }
 
-            // Validated here rather than left to the engine, because the
-            // asserted-claims filter runs first: a claim missing its id would
-            // otherwise be silently dropped for not matching the answer, and
-            // the broken row would score instead of raising.
-            foreach (['id', 'text'] as $required) {
-                if (! is_string($claim[$required] ?? null) || $claim[$required] === '') {
-                    throw $this->malformed($sample, sprintf(
-                        'every metadata.evidence.claims entry needs a non-empty string [%s].',
-                        $required,
-                    ));
-                }
-            }
-
             /** @var array<string, mixed> $claim */
-            $claims[] = $claim;
+            try {
+                $claims[] = ClaimRef::fromArray($claim);
+            } catch (Throwable $e) {
+                throw $this->malformed($sample, sprintf(
+                    'metadata.evidence.claims[%s] is invalid: %s',
+                    is_scalar($index) ? (string) $index : '?',
+                    $e->getMessage(),
+                ));
+            }
         }
 
         return $claims;
+    }
+
+    /**
+     * The declared sources, parsed into DTOs, for the same reason.
+     *
+     * @param  array<string, mixed>  $evidence
+     * @return list<SourceRef>
+     */
+    private function sourcesOf(array $evidence, DatasetSample $sample): array
+    {
+        $sources = [];
+
+        foreach ($evidence['sources'] ?? [] as $index => $source) {
+            if (! is_array($source)) {
+                throw $this->malformed($sample, sprintf(
+                    'every metadata.evidence.sources entry must be a map; got %s.',
+                    get_debug_type($source),
+                ));
+            }
+
+            /** @var array<string, mixed> $source */
+            try {
+                $sources[] = SourceRef::fromArray($source);
+            } catch (Throwable $e) {
+                throw $this->malformed($sample, sprintf(
+                    'metadata.evidence.sources[%s] is invalid: %s',
+                    is_scalar($index) ? (string) $index : '?',
+                    $e->getMessage(),
+                ));
+            }
+        }
+
+        return $sources;
     }
 
     /**
@@ -350,14 +408,14 @@ final class EvidenceRiskMetric implements Metric
      * A claim the answer did not make is dropped rather than failed: the
      * pipeline is not on the hook for a claim it never asserted.
      *
-     * @param  list<array<string, mixed>>  $claims
-     * @return list<array<string, mixed>>
+     * @param  list<ClaimRef>  $claims
+     * @return list<ClaimRef>
      */
     private function assertedClaims(array $claims, string $actualOutput): array
     {
         $answer = $this->normalise($actualOutput);
 
-        return array_values(array_filter($claims, function (array $claim) use ($answer): bool {
+        return array_values(array_filter($claims, function (ClaimRef $claim) use ($answer): bool {
             foreach ($this->matchNeedles($claim) as $needle) {
                 if ($needle !== '' && str_contains($answer, $needle)) {
                     return true;
@@ -369,13 +427,11 @@ final class EvidenceRiskMetric implements Metric
     }
 
     /**
-     * @param  array<string, mixed>  $claim
      * @return list<string>
      */
-    private function matchNeedles(array $claim): array
+    private function matchNeedles(ClaimRef $claim): array
     {
-        $metadata = $claim['metadata'] ?? null;
-        $match = is_array($metadata) ? ($metadata['match'] ?? null) : null;
+        $match = $claim->metadata['match'] ?? null;
 
         if (is_string($match)) {
             return [$this->normalise($match)];
@@ -395,7 +451,7 @@ final class EvidenceRiskMetric implements Metric
             }
         }
 
-        return is_string($claim['text'] ?? null) ? [$this->normalise($claim['text'])] : [];
+        return [$this->normalise($claim->text)];
     }
 
     private function normalise(string $value): string
@@ -404,26 +460,41 @@ final class EvidenceRiskMetric implements Metric
     }
 
     /**
+     * The profile this row asks for, resolved against the registry.
+     *
+     * A key that is present and unusable must never fall back: the row would
+     * be judged by a policy it did not ask for. That covers an explicit
+     * `profile: null` too — the key is there, so it is a value, not an
+     * omission.
+     *
      * @param  array<string, mixed>  $evidence
      */
-    private function profileFor(array $evidence, DatasetSample $sample): string
+    private function resolveProfile(array $evidence, DatasetSample $sample): string
     {
-        if (! array_key_exists('profile', $evidence) || $evidence['profile'] === null) {
-            return $this->profileKey;
+        $key = $this->profileKey;
+
+        if (array_key_exists('profile', $evidence)) {
+            $profile = $evidence['profile'];
+
+            if (! is_string($profile) || $profile === '') {
+                throw $this->malformed($sample, sprintf(
+                    'metadata.evidence.profile must be a non-empty string; got %s.',
+                    get_debug_type($profile),
+                ));
+            }
+
+            $key = $profile;
         }
 
-        $profile = $evidence['profile'];
-
-        // A profile that is present and unusable must not fall back: the row
-        // would silently be judged by a different policy than it asked for.
-        if (! is_string($profile) || $profile === '') {
-            throw $this->malformed($sample, sprintf(
-                'metadata.evidence.profile must be a non-empty string; got %s.',
-                get_debug_type($profile),
-            ));
+        // Resolved, not merely type-checked: an unknown key has to fail here,
+        // before the asserted-claims short circuit can score the row instead.
+        try {
+            $this->container->make(DomainProfileRegistry::class)->get($key);
+        } catch (Throwable $e) {
+            throw $this->malformed($sample, sprintf('profile [%s] could not be resolved: %s', $key, $e->getMessage()));
         }
 
-        return $profile;
+        return $key;
     }
 
     private function malformed(DatasetSample $sample, string $detail): MetricException
