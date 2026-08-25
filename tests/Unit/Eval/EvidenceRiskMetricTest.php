@@ -391,7 +391,7 @@ final class EvidenceRiskMetricTest extends TestCase
     public function test_a_claim_without_an_id_raises_even_when_the_answer_does_not_match_it(): void
     {
         $this->expectException(MetricException::class);
-        $this->expectExceptionMessage('needs a non-empty string [id]');
+        $this->expectExceptionMessage('metadata.evidence.claims[0] is invalid');
 
         $this->metric()->score(
             $this->sample(['claims' => [['text' => 'missing its id']], 'sources' => [['id' => 's1']]]),
@@ -432,6 +432,106 @@ final class EvidenceRiskMetricTest extends TestCase
                 $this->assertStringContainsString('between 0 and 1', $e->getMessage());
             }
         }
+    }
+
+    /**
+     * A non-empty list is an array, so it slipped past the map check and
+     * reached the empty-block short circuit — a present, malformed block
+     * reported as "not annotated" and scored 1.0.
+     */
+    public function test_a_list_shaped_evidence_block_raises(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence must be a map, not a list');
+
+        $this->metric()->score(
+            new DatasetSample(id: 'row-1', input: [], expectedOutput: 'a', metadata: ['evidence' => ['unexpected']]),
+            'an answer',
+        );
+    }
+
+    /**
+     * Validating only id and text let a claim with a broken `assertiveness` be
+     * silently dropped by the answer-match filter and the row scored, instead
+     * of raising against the annotation.
+     */
+    public function test_a_claim_with_an_invalid_assertiveness_raises_even_when_unmatched(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence.claims[0] is invalid');
+
+        $this->metric()->score(
+            $this->sample([
+                'claims' => [['id' => 'c1', 'text' => 'a claim', 'assertiveness' => 'wildly-sure', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1']],
+            ]),
+            'something else entirely',
+        );
+    }
+
+    public function test_a_malformed_source_raises(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence.sources[0] is invalid');
+
+        $this->metric()->score(
+            $this->sample([
+                'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
+                'sources' => [['url' => 'https://example.test/no-id']],
+            ]),
+            'a claim',
+        );
+    }
+
+    /**
+     * The profile was type-checked but never resolved, so an unknown key on a
+     * row whose answer matched nothing hit the short circuit and scored 0.0
+     * instead of raising.
+     */
+    public function test_an_unknown_profile_raises_even_when_the_answer_matches_nothing(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('profile [no-such-profile] could not be resolved');
+
+        $this->metric()->score(
+            $this->sample([
+                'profile' => 'no-such-profile',
+                'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1']],
+            ]),
+            'something else entirely',
+        );
+    }
+
+    /**
+     * An explicit null is a value, not an omission: the key is present, so
+     * falling back would judge the row by a policy it did not ask for.
+     */
+    public function test_an_explicit_null_profile_raises_rather_than_falling_back(): void
+    {
+        $this->expectException(MetricException::class);
+        $this->expectExceptionMessage('metadata.evidence.profile must be a non-empty string');
+
+        $this->metric()->score(
+            $this->sample([
+                'profile' => null,
+                'claims' => [['id' => 'c1', 'text' => 'a claim', 'source_ids' => ['s1']]],
+                'sources' => [['id' => 's1']],
+            ]),
+            'a claim',
+        );
+    }
+
+    /**
+     * `cheap_only` reaches the HTTP surface through ReviewOptions::fromArray,
+     * so the wire contract has to declare it or the no-provider guarantee is
+     * undiscoverable to an API consumer.
+     */
+    public function test_the_openapi_schema_declares_the_cheap_only_option(): void
+    {
+        $schema = (string) file_get_contents(__DIR__.'/../../../resources/openapi.yaml');
+
+        $this->assertStringContainsString('cheap_only:', $schema);
     }
 
     private function recordArtifacts(): ArtifactRecorder

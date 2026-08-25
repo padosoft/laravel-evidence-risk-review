@@ -243,6 +243,14 @@ components:
           type: boolean
         dry_run:
           type: boolean
+        cheap_only:
+          type: boolean
+          default: false
+          description: >-
+            Skip every heavy (LLM-backed) check regardless of the server's
+            llm.enabled setting. label_via_llm governs only source-tier
+            refinement, so it is not enough for a caller that must guarantee
+            no provider call happens.
     ReviewResult:
       type: object
       required:
