@@ -80,7 +80,7 @@ npm run build
 
 ## Composer dist archive
 
-`.gitattributes` marks `docs-site/`, `docs/`, `tests/`, `skills/`, `.github/`, `.claude/`, the README artwork and the dev config files as `export-ignore`. A `composer require` install contains only the runtime package (`src/`, `config/`, `database/`, `routes/`, `resources/openapi.yaml`, `composer.json`, `README.md`, `LICENSE`, `SECURITY.md`), so Node tooling and its lockfile never reach `vendor/`. To inspect the archive locally:
+`.gitattributes` marks `docs-site/`, `docs/`, `tests/`, `skills/`, `.github/`, `.claude/`, the README artwork and the dev config files as `export-ignore`. A Composer dist install (the default for tagged releases) contains only the runtime package (`src/`, `config/`, `database/`, `routes/`, `resources/openapi.yaml`, `composer.json`, `README.md`, `LICENSE`, `SECURITY.md`), so Node tooling and its lockfile do not reach `vendor/`. `export-ignore` only shapes the dist archive: a `--prefer-source` install is a full git clone and still contains every file. To inspect the archive locally:
 
 ```bash
 git archive HEAD | tar -t

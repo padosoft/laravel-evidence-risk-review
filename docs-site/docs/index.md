@@ -244,8 +244,8 @@ $$
 The git repository ships **AI batteries** — a `CLAUDE.md` working guide, an `AGENTS.md` workflow contract and
 invocable `.claude/skills/` encoding the TDD loop, the standalone-boundary rules, the default-OFF
 discipline and the docs-sync process. Clone the repo and open it in Claude Code, Cursor, Copilot or Codex and your
-agent already knows the house rules. These files stay in the repository only: they are `export-ignore`d,
-so Composer installs never carry them.
+agent already knows the house rules. These files are `export-ignore`d, so Composer dist installs (the default)
+do not carry them; only a `--prefer-source` clone does.
 
 ---
 

@@ -520,3 +520,9 @@ and for free, so it can run on **every** row of **every** build.
 - The duplicate root `package.json` fixed in the sister repo does not exist here.
 - Docs: `reference/cli.md` (docs site + Composer dist archive), `operations/security.md`
   (supply chain), `index.md` (AI batteries are repo-only), docmd skill and rule.
+- Review on PR #28 (Codex + Copilot), all valid and fixed: the guard now tracks
+  the opening fence (same character, at least as long, no info string) instead
+  of toggling on any ``` or ~~~; it flags an opening tag whose `>` sits on a
+  later line (`<img` then `src="x">`); docs scope the `export-ignore` guarantee
+  to dist installs, since `--prefer-source` is a full clone. Verified with a
+  probe page covering mixed fences, a multiline tag and `a < b` prose.
