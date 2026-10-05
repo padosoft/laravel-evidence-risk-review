@@ -241,10 +241,11 @@ $$
 
 ## Batteries included for AI-assisted development
 
-This repo ships **AI batteries** — a `CLAUDE.md` working guide, an `AGENTS.md` workflow contract and
+The git repository ships **AI batteries** — a `CLAUDE.md` working guide, an `AGENTS.md` workflow contract and
 invocable `.claude/skills/` encoding the TDD loop, the standalone-boundary rules, the default-OFF
-discipline and the docs-sync process. Open the package in Claude Code, Cursor, Copilot or Codex and your
-agent already knows the house rules.
+discipline and the docs-sync process. Clone the repo and open it in Claude Code, Cursor, Copilot or Codex and your
+agent already knows the house rules. These files stay in the repository only: they are `export-ignore`d,
+so Composer installs never carry them.
 
 ---
 

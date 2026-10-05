@@ -65,6 +65,10 @@ Package: contracts and hooks
 Host: auth, tenants, credentials
 ```
 
+## Supply chain
+
+The Composer dist archive carries only the runtime package. `.gitattributes` marks the docs tooling (`docs-site/` and its Node lockfile), tests, CI, agent files and README artwork as `export-ignore`, so dependency scanners such as Trivy that run on `vendor/padosoft/laravel-evidence-risk-review` see no Node advisories from the docs build. Verify with `git archive HEAD | tar -t`.
+
 ## Gotcha / Limits
 
 ::: callout warning
