@@ -526,3 +526,10 @@ and for free, so it can run on **every** row of **every** build.
   later line (`<img` then `src="x">`); docs scope the `export-ignore` guarantee
   to dist installs, since `--prefer-source` is a full clone. Verified with a
   probe page covering mixed fences, a multiline tag and `a < b` prose.
+- Second and third Codex rounds kept finding Markdown-lexing edge cases in the
+  regex guard (multi-backtick spans, invalid fence openers, escaped backticks,
+  spans across lines, fences inside blockquotes/lists). Replaced the line regexes
+  with `markdown-it` (now an explicit exact devDependency, 14.3.2, already in the
+  lockfile via docmd): raw HTML is every `html_block`/`html_inline` token, so code
+  is excluded exactly as the renderer excludes it. Probe page covers all of the
+  above plus table cells, multiline tags and `::: button`.
