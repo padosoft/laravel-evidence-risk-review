@@ -9,7 +9,8 @@ const FENCE = /^\s{0,3}(`{3,}|~{3,})(.*)$/;
 const bad = [];
 
 function stripInlineCode(line) {
-  return line.replace(/`[^`]*`/g, '');
+  // A code span opens on a run of N backticks and closes on the next run of exactly N.
+  return line.replace(/(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g, '');
 }
 
 (function walk(d) {
@@ -30,7 +31,8 @@ function stripInlineCode(line) {
         if (f && f[1][0] === fence[0] && f[1].length >= fence.length && f[2].trim() === '') fence = null;
         return;
       }
-      if (f) {
+      // A backtick fence's info string cannot contain a backtick, or it is not a fence.
+      if (f && !(f[1][0] === '`' && f[2].includes('`'))) {
         fence = f[1];
         return;
       }
