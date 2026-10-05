@@ -6,7 +6,10 @@ import MarkdownIt from 'markdown-it';
 // blockquotes and lists), code spans of any backtick length, escapes and tags split
 // across lines are all resolved exactly as the renderer resolves them. Raw HTML is
 // then whatever the parser emits as an html_block or html_inline token.
-const md = new MarkdownIt({ html: true });
+// Indented code blocks are disabled: docmd containers (`::: grids` > `::: grid` >
+// `::: card`) indent their bodies, which plain CommonMark would misread as code.
+// Code samples in these docs always use fences.
+const md = new MarkdownIt({ html: true }).disable('code');
 const DOCS = join(process.cwd(), 'docs');
 const BUTTON = /^\s*:::\s*button\b/;
 const bad = [];

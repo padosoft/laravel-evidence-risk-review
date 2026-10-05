@@ -530,6 +530,7 @@ and for free, so it can run on **every** row of **every** build.
   regex guard (multi-backtick spans, invalid fence openers, escaped backticks,
   spans across lines, fences inside blockquotes/lists). Replaced the line regexes
   with `markdown-it` (now an explicit exact devDependency, 14.3.2, already in the
-  lockfile via docmd): raw HTML is every `html_block`/`html_inline` token, so code
+  lockfile via docmd) with indented code blocks disabled, since docmd containers
+  indent their bodies: raw HTML is every `html_block`/`html_inline` token, so code
   is excluded exactly as the renderer excludes it. Probe page covers all of the
   above plus table cells, multiline tags and `::: button`.
