@@ -1,12 +1,35 @@
 import { readdirSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import MarkdownIt from 'markdown-it';
 
+// Parse with a real CommonMark parser instead of line regexes: fences (also inside
+// blockquotes and lists), code spans of any backtick length, escapes and tags split
+// across lines are all resolved exactly as the renderer resolves them. Raw HTML is
+// then whatever the parser emits as an html_block or html_inline token.
+// Indented code blocks are disabled: docmd containers (`::: grids` > `::: grid` >
+// `::: card`) indent their bodies, which plain CommonMark would misread as code.
+// Code samples in these docs always use fences.
+const md = new MarkdownIt({ html: true }).disable('code');
 const DOCS = join(process.cwd(), 'docs');
-const TAG = /<\/?[A-Z][A-Za-z0-9]*(\s|>|\/)/g;
+const BUTTON = /^\s*:::\s*button\b/;
 const bad = [];
 
-function stripInlineCode(line) {
-  return line.replace(/`[^`]*`/g, '');
+function checkInline(token, p, fallbackLine) {
+  // Inline tokens inside table cells carry no map: use the enclosing block's line.
+  let line = token.map ? token.map[0] + 1 : fallbackLine;
+  let lineStart = true;
+  for (const child of token.children) {
+    if (child.type === 'softbreak' || child.type === 'hardbreak') {
+      line++;
+      lineStart = true;
+      continue;
+    }
+    if (child.type === 'html_inline') bad.push(`${p}:${line} raw HTML ${child.content}`);
+    if (child.type === 'text' && lineStart && BUTTON.test(child.content)) {
+      bad.push(`${p}:${line} forbidden ::: button container`);
+    }
+    lineStart = false;
+  }
 }
 
 (function walk(d) {
@@ -18,22 +41,20 @@ function stripInlineCode(line) {
     }
     if (!n.endsWith('.md')) continue;
 
-    let inFence = false;
-    readFileSync(p, 'utf8').split('\n').forEach((line, i) => {
-      if (/^\s*```/.test(line)) {
-        inFence = !inFence;
-        return;
+    let blockLine = 1;
+    for (const token of md.parse(readFileSync(p, 'utf8'), {})) {
+      if (token.map) blockLine = token.map[0] + 1;
+      if (token.type === 'html_block') {
+        bad.push(`${p}:${token.map[0] + 1} raw HTML ${token.content.trim().split('\n')[0]}`);
+      } else if (token.type === 'inline') {
+        checkInline(token, p, blockLine);
       }
-      if (inFence) return;
-
-      const m = stripInlineCode(line).match(TAG);
-      if (m) bad.push(`${p}:${i + 1} ${m.join(' ')}`);
-    });
+    }
   }
 })(DOCS);
 
 if (bad.length) {
-  console.error('Raw component tags found:\n' + bad.join('\n'));
+  console.error('Docs Markdown guard failed:\n' + bad.join('\n'));
   process.exit(1);
 }
-console.log('OK: no raw component tags.');
+console.log('OK: no raw HTML or forbidden button containers.');

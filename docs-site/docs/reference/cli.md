@@ -64,6 +64,28 @@ Consequences: default installs have zero token cost, but hosts must bind an LLM 
 php artisan evidence:review artifact.json --profile=medical --dry-run --json
 ```
 
+## Docs site
+
+The docs tooling is self-contained in `docs-site/`: it has the only `package.json` in the repository, and all commands run from that folder.
+
+```bash
+cd docs-site
+npm ci
+npm run dev
+npm run check
+npm run build
+```
+
+`npm run check` fails on raw HTML or `::: button` containers outside code samples. `npm run build` writes the static site to `docs-site/_site`.
+
+## Composer dist archive
+
+`.gitattributes` marks `docs-site/`, `docs/`, `tests/`, `skills/`, `.github/`, `.claude/`, the README artwork and the dev config files as `export-ignore`. A Composer dist install (the default for tagged releases) contains only the runtime package (`src/`, `config/`, `database/`, `routes/`, `resources/openapi.yaml`, `composer.json`, `README.md`, `LICENSE`, `SECURITY.md`), so Node tooling and its lockfile do not reach `vendor/`. `export-ignore` only shapes the dist archive: a `--prefer-source` install is a full git clone and still contains every file. To inspect the archive locally:
+
+```bash
+git archive HEAD | tar -t
+```
+
 ## Gotcha / Limits
 
 ::: callout warning

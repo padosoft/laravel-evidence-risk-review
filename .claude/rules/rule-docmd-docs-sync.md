@@ -10,7 +10,7 @@ Use the `.claude/skills/docmd-docs/SKILL.md` skill for syntax, layout, semantic 
 
 Documentation update is not required for purely internal refactors, tooling-only fixes, formatting-only changes, test-only changes that do not alter public behavior, or cosmetic wording changes outside public docs. When skipping docs for one of these reasons, state the reason in the changelog entry, PR body, or progress note.
 
-Before closing any work that touches docmd docs, run from `docs-site/`:
+Before closing any work that touches docmd docs, run from `docs-site/` (the only `package.json` in the repository):
 
 ```bash
 npm run check

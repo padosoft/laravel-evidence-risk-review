@@ -499,3 +499,38 @@ and for free, so it can run on **every** row of **every** build.
   6. The question-reaches-the-engine test asserted nothing that would fail if the
      feature did nothing; it now observes the artifact at the check boundary.
 - Tests: 95 → 105 (1082 assertions). Gates green.
+
+## 2026-10-05 — Composer dist hygiene + docs-site dependency bump (v1.4.1)
+
+- Ported the fix shipped in the sister package `laravel-ai-search-providers`
+  v1.4.1, prompted by a user's Trivy report there: the repo had no
+  `export-ignore` rules, so the Composer dist archive carried `docs-site/` and its
+  Node lockfile into host `vendor/` dirs, where scanners flag docs-build advisories.
+- `.gitattributes` now `export-ignore`s `.claude/`, `.github/`, `docs/`,
+  `docs-site/`, `skills/`, `tests/`, README artwork, agent/community files and dev
+  config. `git archive HEAD` carries only `src/`, `config/`, `database/`,
+  `routes/`, `resources/openapi.yaml`, `composer.json`, `README.md`, `LICENSE`,
+  `SECURITY.md` — the runtime needs `routes/api.php` and `resources/openapi.yaml`.
+- `docs-site/` devDependencies: `@huggingface/transformers` 4.3.0 and
+  `onnxruntime-node` 1.30.0, pulling `sharp` 0.35.5 and `adm-zip` 0.6.1;
+  `npm audit` 5 vulnerabilities (4 high) → 0.
+- `docs-site/scripts/check-no-raw-html.mjs` now rejects any raw HTML tag and
+  `::: button` outside code samples (was: capitalised component tags only);
+  `~~~` fences are skipped too. Verified with a negative probe page.
+- The duplicate root `package.json` fixed in the sister repo does not exist here.
+- Docs: `reference/cli.md` (docs site + Composer dist archive), `operations/security.md`
+  (supply chain), `index.md` (AI batteries are repo-only), docmd skill and rule.
+- Review on PR #28 (Codex + Copilot), all valid and fixed: the guard now tracks
+  the opening fence (same character, at least as long, no info string) instead
+  of toggling on any ``` or ~~~; it flags an opening tag whose `>` sits on a
+  later line (`<img` then `src="x">`); docs scope the `export-ignore` guarantee
+  to dist installs, since `--prefer-source` is a full clone. Verified with a
+  probe page covering mixed fences, a multiline tag and `a < b` prose.
+- Second and third Codex rounds kept finding Markdown-lexing edge cases in the
+  regex guard (multi-backtick spans, invalid fence openers, escaped backticks,
+  spans across lines, fences inside blockquotes/lists). Replaced the line regexes
+  with `markdown-it` (now an explicit exact devDependency, 14.3.2, already in the
+  lockfile via docmd) with indented code blocks disabled, since docmd containers
+  indent their bodies: raw HTML is every `html_block`/`html_inline` token, so code
+  is excluded exactly as the renderer excludes it. Probe page covers all of the
+  above plus table cells, multiline tags and `::: button`.

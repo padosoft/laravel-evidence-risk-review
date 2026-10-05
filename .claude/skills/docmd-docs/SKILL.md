@@ -26,7 +26,11 @@ npm run check
 npm run build
 ```
 
-`npm run check` rejects raw JSX/MDX-style component tags in Markdown. `npm run build` must pass before closing documentation work.
+`docs-site/package.json` is the only `package.json` in the repository: do not add one at the root.
+
+`npm run check` rejects raw HTML tags (including JSX/MDX-style components) and `::: button` containers outside code samples. `npm run build` must pass before closing documentation work.
+
+`docs-site/` is `export-ignore`d in `.gitattributes`, so none of it ships in the Composer dist archive. Keep it that way: Node lockfiles in `vendor/` get flagged by host dependency scanners.
 
 ## Markdown Syntax
 
